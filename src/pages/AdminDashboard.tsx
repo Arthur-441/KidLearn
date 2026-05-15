@@ -10,6 +10,7 @@ import {
   setDoc,
   updateDoc,
   serverTimestamp,
+  Timestamp,
   query,
   orderBy,
   deleteDoc,
@@ -604,6 +605,9 @@ export default function AdminDashboard() {
                           Email/Username
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Stats
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Role
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -626,6 +630,14 @@ export default function AdminDashboard() {
                             </div>
                             <div className="text-xs text-gray-500">
                               {u.username}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              ⭐ {u.stars || 0}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Games: {u.gamesPlayed || 0}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -667,28 +679,97 @@ export default function AdminDashboard() {
                               : "N/A"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            {/* Actions can be added here, e.g. toggle role */}
-                            <button
-                              onClick={async () => {
-                                const newRole =
-                                  u.role === "admin" ? "user" : "admin";
-                                if (
-                                  window.confirm(`Change role to ${newRole}?`)
-                                ) {
-                                  try {
-                                    await updateDoc(doc(db, "users", u.id), {
-                                      role: newRole,
-                                    });
-                                    loadDashboardData();
-                                  } catch (e) {
-                                    console.error(e);
+                            <div className="flex flex-col gap-2 items-end">
+                              <button
+                                onClick={async () => {
+                                  const newRole =
+                                    u.role === "admin" ? "user" : "admin";
+                                  if (
+                                    window.confirm(`Change role to ${newRole}?`)
+                                  ) {
+                                    try {
+                                      await updateDoc(doc(db, "users", u.id), {
+                                        role: newRole,
+                                      });
+                                      loadDashboardData();
+                                    } catch (e) {
+                                      console.error(e);
+                                    }
                                   }
-                                }
-                              }}
-                              className="text-indigo-600 hover:text-indigo-900"
-                            >
-                              Toggle Admin
-                            </button>
+                                }}
+                                className="text-gray-600 hover:text-gray-900 text-xs"
+                              >
+                                Toggle Admin
+                              </button>
+
+                              <button
+                                onClick={async () => {
+                                  if (
+                                    window.confirm(`Toggle premium status?`)
+                                  ) {
+                                    try {
+                                      const isPremium = !u.isPremium;
+
+                                      // Default to 30 days if making premium
+                                      const now = new Date();
+                                      now.setDate(now.getDate() + 30);
+                                      const subscriptionEndDate = isPremium
+                                        ? Timestamp.fromDate(now)
+                                        : null;
+
+                                      await updateDoc(doc(db, "users", u.id), {
+                                        isPremium,
+                                        subscriptionEndDate,
+                                      });
+                                      loadDashboardData();
+                                    } catch (e) {
+                                      console.error(e);
+                                    }
+                                  }
+                                }}
+                                className="text-indigo-600 hover:text-indigo-900 text-xs"
+                              >
+                                Toggle Premium
+                              </button>
+
+                              {u.isPremium && (
+                                <button
+                                  onClick={async () => {
+                                    if (
+                                      window.confirm(
+                                        `Extend subscription by 30 days?`,
+                                      )
+                                    ) {
+                                      try {
+                                        let currentEnd =
+                                          u.subscriptionEndDate?.toDate() ||
+                                          new Date();
+                                        // If expired, start from today
+                                        if (currentEnd < new Date())
+                                          currentEnd = new Date();
+                                        currentEnd.setDate(
+                                          currentEnd.getDate() + 30,
+                                        );
+
+                                        await updateDoc(
+                                          doc(db, "users", u.id),
+                                          {
+                                            subscriptionEndDate:
+                                              Timestamp.fromDate(currentEnd),
+                                          },
+                                        );
+                                        loadDashboardData();
+                                      } catch (e) {
+                                        console.error(e);
+                                      }
+                                    }
+                                  }}
+                                  className="text-green-600 hover:text-green-900 text-xs"
+                                >
+                                  +30 Days
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
