@@ -500,7 +500,7 @@ export default function ParentDashboard() {
               <div className="flex flex-col md:flex-row md:items-center justify-between z-10 relative gap-4 md:gap-0">
                 <div>
                   <h2 className="text-2xl font-black font-['Baloo_2'] mb-1 flex items-center gap-2">
-                    <span className="text-3xl">👑</span> KidLearn Premium
+                    <span className="text-3xl">👑</span> KidLearn Academy App Premium
                   </h2>
                   {subscription?.subscriptionStatus === "active" ? (
                     <p className="text-[#a4b1cd] font-bold text-sm md:text-base">

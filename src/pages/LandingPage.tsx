@@ -480,7 +480,7 @@ export default function LandingPage() {
         <section id="how" className="py-20 lg:py-28 px-5 bg-[#f8f7ff] relative">
           <div className="max-w-[1200px] mx-auto text-center">
             <h2 className="font-['Baloo_2'] text-4xl md:text-5xl font-extrabold text-[#1a1a2e] mb-4">
-              How KidLearn Works 💡
+              How KidLearn Academy App Works 💡
             </h2>
             <p className="text-lg text-[#555] mb-12 max-w-[600px] mx-auto">
               Simple for parents, magical for kids
@@ -557,7 +557,7 @@ export default function LandingPage() {
           Making every child's learning journey magical ✨
         </p>
         <p className="text-xs opacity-40">
-          © 2026 KidLearn. Made with 💛 for curious little minds.
+          © 2026 KidLearn Academy App. Made with 💛 for curious little minds.
         </p>
       </footer>
     </div>
