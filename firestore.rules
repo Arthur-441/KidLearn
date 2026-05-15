@@ -1,0 +1,104 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/adminUsers/$(request.auth.uid)) && get(/databases/$(database)/documents/adminUsers/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /adminUsers/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /premiumCodes/{codeId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    match /subscriptions/{subscriptionId} {
+      allow read: if isSignedIn() && (request.auth.uid == subscriptionId || isAdmin());
+      allow write: if isSignedIn() && (request.auth.uid == subscriptionId || isAdmin());
+    }
+
+    function isValidUserCreate(data) {
+      return data.keys().hasAll(['username', 'email', 'createdAt']) &&
+             data.username is string && data.username.size() > 0 && data.username.size() <= 64 &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 128 &&
+             data.createdAt == request.time;
+    }
+
+    function isValidChildCreate(data) {
+      return data.keys().hasAll(['name', 'avatar', 'stars', 'badges', 'gamesPlayed', 'dailyMessage', 'createdAt']) &&
+             data.keys().size() == 7 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 64 &&
+             data.avatar is string && data.avatar.size() <= 10 &&
+             data.stars is number && data.stars == 0 &&
+             data.badges is list && data.badges.size() == 0 &&
+             data.gamesPlayed is number && data.gamesPlayed == 0 &&
+             data.dailyMessage is string && data.dailyMessage.size() <= 500 &&
+             data.createdAt == request.time;
+    }
+
+    function isValidGameResultCreate(data) {
+      return data.keys().hasAll(['subject', 'score', 'total', 'starsEarned', 'issues', 'createdAt']) &&
+             data.keys().size() == 6 &&
+             data.subject is string && data.subject.size() > 0 && data.subject.size() <= 32 &&
+             data.score is number && data.score >= 0 &&
+             data.total is number && data.total > 0 &&
+             data.starsEarned is number && data.starsEarned >= 0 &&
+             data.issues is list && data.issues.size() <= 50 &&
+             data.createdAt == request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+
+      allow create: if isSignedIn() && isValidId(userId) && request.auth.uid == userId; // Allow lax create for backwards compat with old schema
+
+      allow update: if isSignedIn() && isValidId(userId) && request.auth.uid == userId && (
+        (incoming().diff(existing()).affectedKeys().hasOnly(['stars', 'gamesPlayed'])) ||
+        (incoming().diff(existing()).affectedKeys().hasOnly(['stars', 'gamesPlayed', 'badges'])) ||
+        (incoming().diff(existing()).affectedKeys().hasOnly(['username']))
+      ) &&
+      incoming().get('stars', 0) is number &&
+      incoming().get('gamesPlayed', 0) is number &&
+      incoming().get('badges', []) is list && incoming().get('badges', []).size() <= 50;
+
+      match /children/{childId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId;
+        allow list: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+        
+        allow create: if isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId &&
+                         isValidChildCreate(incoming());
+
+        allow update: if isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId && 
+          incoming().diff(existing()).affectedKeys().hasOnly(['dailyMessage', 'stars', 'gamesPlayed', 'badges', 'name', 'avatar', 'lastLoginDate', 'streak', 'dailyStars', 'dailyGames', 'dailyBadges', 'quest1Claimed', 'quest2Claimed', 'quest3Claimed', 'questCompleted']) &&
+        incoming().get('stars', 0) is number &&
+        incoming().get('gamesPlayed', 0) is number &&
+        incoming().get('dailyMessage', "") is string && incoming().get('dailyMessage', "").size() <= 500 &&
+        incoming().get('badges', []) is list && incoming().get('badges', []).size() <= 50;
+        
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId;
+
+        match /results/{resultId} {
+          allow get: if isSignedIn() && isValidId(userId) && isValidId(childId) && isValidId(resultId) && request.auth.uid == userId;
+          allow list: if isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId;
+          
+          allow create: if isSignedIn() && isValidId(userId) && isValidId(childId) && isValidId(resultId) && request.auth.uid == userId &&
+                           isValidGameResultCreate(incoming());
+        }
+      }
+    }
+  }
+}

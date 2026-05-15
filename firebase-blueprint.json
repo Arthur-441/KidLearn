@@ -1,0 +1,121 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A parent's profile.",
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "Parent's display name."
+        },
+        "email": {
+          "type": "string",
+          "description": "Parent's email."
+        },
+        "stars": {
+          "type": "number",
+          "description": "Legacy field (total stars earned)."
+        },
+        "badges": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Legacy field (badges)."
+        },
+        "gamesPlayed": {
+          "type": "number",
+          "description": "Legacy field (games played)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of account creation."
+        }
+      },
+      "required": ["username", "email", "createdAt"]
+    },
+    "Child": {
+      "title": "Child",
+      "description": "A child profile under a parent account.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Child's first name."
+        },
+        "avatar": {
+          "type": "string",
+          "description": "Avatar emoji or identifier."
+        },
+        "stars": {
+          "type": "number",
+          "description": "Stars earned by child."
+        },
+        "badges": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Badges earned by child."
+        },
+        "gamesPlayed": {
+          "type": "number",
+          "description": "Total games played by child."
+        },
+        "dailyMessage": {
+          "type": "string",
+          "description": "Message from parent."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["name", "avatar", "stars", "badges", "gamesPlayed", "dailyMessage", "createdAt"]
+    },
+    "GameResult": {
+      "title": "GameResult",
+      "description": "A completed game session result.",
+      "type": "object",
+      "properties": {
+        "subject": {
+          "type": "string",
+          "description": "Subject like colors, shapes, etc."
+        },
+        "score": {
+          "type": "number",
+          "description": "Questions right."
+        },
+        "total": {
+          "type": "number",
+          "description": "Total questions."
+        },
+        "starsEarned": {
+          "type": "number"
+        },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Concepts the child got wrong."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["subject", "score", "total", "starsEarned", "issues", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores parent profiles."
+    },
+    "users/{userId}/children/{childId}": {
+      "schema": { "$ref": "#/entities/Child" },
+      "description": "Stores child profiles for a parent."
+    },
+    "users/{userId}/children/{childId}/results/{resultId}": {
+      "schema": { "$ref": "#/entities/GameResult" },
+      "description": "Stores game results for a child."
+    }
+  }
+}

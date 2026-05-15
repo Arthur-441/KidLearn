@@ -1,0 +1,111 @@
+/* Shared CSS Variables */
+:root {
+  --blue: #4ECAFC;
+  --blue-d: #1aaee8;
+  --blue-l: #e8f8ff;
+  --orange: #FF8C42;
+  --orange-d: #e8731f;
+  --purple: #9B5DE5;
+  --green: #06d6a0;
+  --pink: #FF6FA8;
+  --yellow: #FFD93D;
+  --red: #ef5350;
+  --dark: #1a1a2e;
+  --mid: #4a4a6a;
+  --muted: #9999bb;
+  --border: #e8e8f4;
+  --bg: #f0f4ff;
+  --white: #fff;
+  --sun: #FFD93D;
+  --teal: #06d6a0;
+  --nav-h: 62px;
+  --ease: cubic-bezier(.34,1.56,.64,1);
+  --section-py: clamp(60px, 8vw, 90px);
+  --section-px: clamp(20px, 5vw, 60px);
+  --card-radius: 24px;
+  --shadow-sm: 0 4px 14px rgba(0,0,0,.08);
+  --shadow-md: 0 8px 32px rgba(0,0,0,.10);
+  --ease-bounce: cubic-bezier(.34,1.56,.64,1);
+  --ease-smooth: cubic-bezier(.4,0,.2,1);
+}
+
+/* Base styles */
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--dark);
+  min-height: 100vh;
+}
+
+/* Animations */
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes floatBob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-18px) rotate(6deg); }
+}
+
+@keyframes bounceWin {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(1.3) rotate(-5deg); }
+  70% { transform: scale(.9) rotate(3deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes bannerIn {
+  from { opacity: 0; transform: scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes spin1 {
+  from { transform: rotate(-20deg) scale(.5); }
+  to { transform: rotate(0) scale(1); }
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(28px) scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Global utility classes */
+.d1 { animation-delay: .06s; }
+.d2 { animation-delay: .12s; }
+.d3 { animation-delay: .18s; }
+.d4 { animation-delay: .24s; }
+.d5 { animation-delay: .30s; }
+.d6 { animation-delay: .36s; }
+.delay-100 { transition-delay: .10s; }
+.delay-200 { transition-delay: .20s; }
+.delay-300 { transition-delay: .30s; }
+.delay-400 { transition-delay: .40s; }
+.delay-500 { transition-delay: .50s; }
+
+/* Subject standard gradients */
+.s-shapes  { background: linear-gradient(135deg,#4fc3f7,#0288d1); }
+.s-letters { background: linear-gradient(135deg,#ffb74d,#e65100); }
+.s-colors  { background: linear-gradient(135deg,#f48fb1,#c2185b); }
+.s-numbers { background: linear-gradient(135deg,#a5d6a7,#388e3c); }
+.s-animals { background: linear-gradient(135deg,#ce93d8,#7b1fa2); }
+.s-music   { background: linear-gradient(135deg,#80deea,#00838f); }
