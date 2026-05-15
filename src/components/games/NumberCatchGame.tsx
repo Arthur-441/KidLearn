@@ -121,7 +121,7 @@ export default function NumberCatchGame({
   useEffect(() => {
     let animationFrame: number;
     let lastTime = performance.now();
-    
+
     const animate = (time: number) => {
       const deltaTime = time - lastTime;
       // We can use a fixed time step or just use our speed directly, for now we keep the same logic
@@ -151,11 +151,18 @@ export default function NumberCatchGame({
             playAudio(SOUND_URLS.correct);
             if (triggerReward) triggerReward("star", 1);
             scoreToAdd++;
-            
-            const others = newObjects.filter(p => p.id !== obj.id && p.number === currentTarget && (p.y <= 80 || p.y >= 95 || Math.abs(p.x - currentBasketX) >= 15));
+
+            const others = newObjects.filter(
+              (p) =>
+                p.id !== obj.id &&
+                p.number === currentTarget &&
+                (p.y <= 80 ||
+                  p.y >= 95 ||
+                  Math.abs(p.x - currentBasketX) >= 15),
+            );
             if (others.length === 0) {
-               playAudio(SOUND_URLS.awesome);
-               roundToAdvance = true;
+              playAudio(SOUND_URLS.awesome);
+              roundToAdvance = true;
             }
           } else {
             playAudio(SOUND_URLS.wrong);
@@ -171,7 +178,7 @@ export default function NumberCatchGame({
       }
 
       if (scoreToAdd > 0) {
-        setScore(s => s + scoreToAdd);
+        setScore((s) => s + scoreToAdd);
       }
       if (roundToAdvance) {
         setTimeout(() => {

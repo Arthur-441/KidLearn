@@ -105,7 +105,7 @@ export default function LetterCatchGame({
       for (let i = 0; i < currentLetters.length; i++) {
         const item = { ...currentLetters[i] };
         item.y += item.speed;
-        
+
         if (
           item.y > 80 &&
           item.y < 90 &&
@@ -144,7 +144,7 @@ export default function LetterCatchGame({
       playAudio(SOUND_URLS.correct);
       if (triggerReward) triggerReward("star", 1);
       setScore((s) => s + 1);
-      
+
       const nextCount = caughtCountRef.current + 1;
       setCaughtCount(nextCount);
       if (nextCount >= targetPerRound) {
@@ -156,7 +156,7 @@ export default function LetterCatchGame({
       if (setFeedback) {
         setFeedback({
           text: `Oops! That was ${caughtLetter}. We need ${targetLetter}!`,
-          color: "#d32f2f"
+          color: "#d32f2f",
         });
       }
     }

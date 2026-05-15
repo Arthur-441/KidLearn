@@ -36,6 +36,9 @@ export default function Signup() {
           badges: [],
           gamesPlayed: 0,
           createdAt: serverTimestamp(),
+          role: "user",
+          isPremium: false,
+          subscriptionEndDate: null,
         });
       }
       // Navigation is handled by useEffect onAuthStateChanged

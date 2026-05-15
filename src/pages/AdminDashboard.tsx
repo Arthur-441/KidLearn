@@ -40,6 +40,7 @@ export default function AdminDashboard() {
   const [activeSubsCount, setActiveSubsCount] = useState(0);
   const [codes, setCodes] = useState<any[]>([]);
   const [subs, setSubs] = useState<any[]>([]);
+  const [usersList, setUsersList] = useState<any[]>([]);
 
   // Generator
   const [newCodeDuration, setNewCodeDuration] = useState(30);
@@ -55,7 +56,7 @@ export default function AdminDashboard() {
     }
 
     const checkAdmin = async () => {
-      const adminDoc = await getDoc(doc(db, "adminUsers", user.uid));
+      const adminDoc = await getDoc(doc(db, "users", user.uid));
       if (adminDoc.exists() && adminDoc.data().role === "admin") {
         setIsAdmin(true);
         loadDashboardData();
@@ -83,6 +84,11 @@ export default function AdminDashboard() {
         (s: any) => s.subscriptionStatus === "active",
       );
       setActiveSubsCount(active.length);
+
+      const usersSnap = await getDocs(
+        query(collection(db, "users"), orderBy("createdAt", "desc")),
+      );
+      setUsersList(usersSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
     } catch (err) {
       console.error(err);
     }
@@ -584,27 +590,116 @@ export default function AdminDashboard() {
 
             {/* USERS TAB */}
             {activeTab === "users" && (
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
-                <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  User Management
-                </h3>
-                <p className="text-gray-500">
-                  Full user listing is not currently synchronized to Firestore
-                  from Auth.
-                </p>
-                <p className="text-gray-500 text-sm mt-1">
-                  To view or manage specific users, use the Firebase
-                  Authentication console.
-                </p>
-                <a
-                  href="https://console.firebase.google.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-6 inline-flex items-center gap-2 text-indigo-600 font-medium hover:text-indigo-700"
-                >
-                  Open Firebase Console <LogOut className="w-4 h-4" />
-                </a>
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-140px)]">
+                <div className="p-5 border-b border-gray-200 bg-white flex justify-between items-center">
+                  <h3 className="font-semibold text-gray-900">
+                    User Management
+                  </h3>
+                </div>
+                <div className="overflow-auto flex-1">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50 sticky top-0 z-10">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Email/Username
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Role
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Premium Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Created At
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {usersList.map((u) => (
+                        <tr key={u.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {u.email}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {u.username}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                u.role === "admin"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {u.role || "user"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                u.isPremium
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {u.isPremium ? "Premium" : "Free"}
+                            </span>
+                            {u.isPremium && u.subscriptionEndDate && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                Ends:{" "}
+                                {u.subscriptionEndDate?.toDate
+                                  ? format(
+                                      u.subscriptionEndDate.toDate(),
+                                      "MMM d, yyyy",
+                                    )
+                                  : "N/A"}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {u.createdAt?.toDate
+                              ? format(u.createdAt.toDate(), "MMM d, yyyy")
+                              : "N/A"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            {/* Actions can be added here, e.g. toggle role */}
+                            <button
+                              onClick={async () => {
+                                const newRole =
+                                  u.role === "admin" ? "user" : "admin";
+                                if (
+                                  window.confirm(`Change role to ${newRole}?`)
+                                ) {
+                                  try {
+                                    await updateDoc(doc(db, "users", u.id), {
+                                      role: newRole,
+                                    });
+                                    loadDashboardData();
+                                  } catch (e) {
+                                    console.error(e);
+                                  }
+                                }
+                              }}
+                              className="text-indigo-600 hover:text-indigo-900"
+                            >
+                              Toggle Admin
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {usersList.length === 0 && (
+                    <div className="p-6 text-center text-sm text-gray-500">
+                      No users found
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

@@ -14,7 +14,7 @@ service cloud.firestore {
     function isSignedIn() { return request.auth != null; }
 
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/adminUsers/$(request.auth.uid)) && get(/databases/$(database)/documents/adminUsers/$(request.auth.uid)).data.role == 'admin';
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     match /adminUsers/{userId} {
@@ -62,18 +62,22 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow get: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
 
-      allow create: if isSignedIn() && isValidId(userId) && request.auth.uid == userId; // Allow lax create for backwards compat with old schema
+      allow create: if isSignedIn() && isValidId(userId) && request.auth.uid == userId &&
+                    (incoming().get('role', 'user') == 'user' && 
+                     incoming().get('isPremium', false) == false);
 
-      allow update: if isSignedIn() && isValidId(userId) && request.auth.uid == userId && (
+      allow update: if (isSignedIn() && isValidId(userId) && request.auth.uid == userId && (
         (incoming().diff(existing()).affectedKeys().hasOnly(['stars', 'gamesPlayed'])) ||
         (incoming().diff(existing()).affectedKeys().hasOnly(['stars', 'gamesPlayed', 'badges'])) ||
         (incoming().diff(existing()).affectedKeys().hasOnly(['username']))
       ) &&
       incoming().get('stars', 0) is number &&
       incoming().get('gamesPlayed', 0) is number &&
-      incoming().get('badges', []) is list && incoming().get('badges', []).size() <= 50;
+      incoming().get('badges', []) is list && incoming().get('badges', []).size() <= 50) || 
+      (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['role', 'isPremium', 'subscriptionEndDate']));
 
       match /children/{childId} {
         allow get: if isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId;

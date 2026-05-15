@@ -30,6 +30,19 @@
           "type": "string",
           "format": "date-time",
           "description": "Timestamp of account creation."
+        },
+        "role": {
+          "type": "string",
+          "description": "User role: 'user' or 'admin'"
+        },
+        "isPremium": {
+          "type": "boolean",
+          "description": "Premium status"
+        },
+        "subscriptionEndDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Premium subscription end date"
         }
       },
       "required": ["username", "email", "createdAt"]
