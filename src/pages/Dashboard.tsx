@@ -65,6 +65,24 @@ export default function Dashboard() {
         </h1>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12">
+          {/* Admin Tile */}
+          {user?.role === "admin" && (
+            <button
+              onClick={() => navigate("/admin")}
+              className="flex flex-col items-center justify-center p-6 bg-white rounded-[24px] shadow-sm hover:shadow-lg hover:-translate-y-2 transition-all border-4 border-transparent hover:border-[#2ecc71] active:scale-95 group"
+            >
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#2ecc71] to-[#27ae60] text-white font-black text-4xl flex items-center justify-center mb-4 shadow-md group-hover:scale-110 transition-transform">
+                🛠️
+              </div>
+              <span className="font-['Baloo_2'] text-xl font-extrabold text-[#1a1a2e]">
+                Admin
+              </span>
+              <span className="text-xs text-[#2ecc71] font-bold mt-1">
+                Dashboard
+              </span>
+            </button>
+          )}
+
           {/* Parent Tile */}
           <button
             onClick={() => navigate("/parent")}
