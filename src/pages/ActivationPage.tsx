@@ -8,6 +8,7 @@ import {
   doc,
   runTransaction,
   serverTimestamp,
+  Timestamp,
 } from "firebase/firestore";
 import ContactSupport from "../components/ContactSupport";
 import FeatureGuide from "../components/FeatureGuide";
@@ -70,13 +71,20 @@ export const activateCode = async (parentUid: string, childId: string, code: str
 
     // Determine new expiry if we want to extend
     const durationDays = codeData.durationDays || 30;
-    const now = new Date();
+    const childData = childSnap.data();
+    let currentExpireAt = new Date();
+    if (childData && childData.premiumExpireAt) {
+      currentExpireAt = childData.premiumExpireAt.toDate();
+    }
+    const baseDate = currentExpireAt > new Date() ? currentExpireAt : new Date();
+    baseDate.setDate(baseDate.getDate() + durationDays);
     
     // Update child profile
     transaction.update(childRef, {
       isPremium: true,
       premiumActivatedAt: serverTimestamp(),
       activationCode: cleanCode,
+      premiumExpireAt: Timestamp.fromDate(baseDate),
     });
   });
 };
@@ -90,6 +98,7 @@ export default function ActivationPage() {
   const [errorObj, setErrorObj] = useState("");
   const [success, setSuccess] = useState("");
   const [isActivating, setIsActivating] = useState(false);
+  const [showContactPopup, setShowContactPopup] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) navigate("/login");
@@ -126,15 +135,11 @@ export default function ActivationPage() {
     }
 
     const activeChild = children.find(c => c.id === selectedChildId);
-    if (activeChild?.isPremium) {
-      setErrorObj("This child already has an active premium subscription.");
-      return;
-    }
 
     setIsActivating(true);
     try {
       await activateCode(user.uid, selectedChildId, code.toUpperCase());
-      setSuccess("Premium Activated Successfully! 🌟");
+      setSuccess(activeChild?.isPremium ? "Premium Extended Successfully! 🌟" : "Premium Activated Successfully! 🌟");
       setCode("");
       confetti({
         particleCount: 150,
@@ -246,13 +251,41 @@ export default function ActivationPage() {
               disabled={isActivating || children.length === 0}
               className="w-full bg-[#FFD93D] text-[#1a1a2e] py-4 rounded-xl font-black text-lg hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
             >
-              {isActivating ? "Activating..." : "Activate Now"}
+              {isActivating ? "Activating..." : (children.find(c => c.id === selectedChildId)?.isPremium ? "Extend Premium" : "Activate Now")}
             </button>
           </form>
         </div>
 
-        <ContactSupport />
+        <div id="contact-section">
+          <ContactSupport />
+        </div>
       </div>
+      
+      {showContactPopup && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-[#1a1a2e]/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center">
+             <div className="text-6xl mb-4">💬</div>
+             <h2 className="text-2xl font-black font-['Baloo_2'] text-[#1a1a2e] mb-2">Need a code?</h2>
+             <p className="text-[#6a6a8c] font-bold mb-6">Contact us to access an activation code to unlock premium features!</p>
+             <button
+               onClick={() => {
+                 setShowContactPopup(false);
+                 document.getElementById("contact-section")?.scrollIntoView({ behavior: "smooth" });
+               }}
+               className="w-full bg-[#1aaee8] text-white py-3 rounded-xl font-black text-lg hover:scale-105 transition-transform"
+             >
+               Show Contact Options
+             </button>
+             <button
+               onClick={() => setShowContactPopup(false)}
+               className="mt-4 text-[#9999bb] font-bold text-sm hover:text-[#1a1a2e] transition-colors"
+             >
+               I already have a code
+             </button>
+          </div>
+        </div>
+      )}
+
       <FeatureGuide 
         featureId="activation_page" 
         title="Premium Activation 💎" 

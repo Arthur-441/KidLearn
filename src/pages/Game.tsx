@@ -66,6 +66,7 @@ export default function Game() {
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
   const [interactionSolved, setInteractionSolved] = useState(false);
   const [readingFinished, setReadingFinished] = useState(false);
+  const [gameStartTime] = useState<number>(Date.now());
   const [transitioningStory, setTransitioningStory] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -548,6 +549,7 @@ export default function Game() {
           totalRounds,
           finalStars,
           issues,
+          Math.max(1, Math.round((Date.now() - gameStartTime) / 1000)),
           badgeId,
         );
       } catch (e) {

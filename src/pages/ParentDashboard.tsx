@@ -200,24 +200,38 @@ export default function ParentDashboard() {
     };
   };
 
-  const getRecommendations = (insights: any) => {
+  const getRecommendations = (insights: any, childId: string) => {
     const allOptions = [
       {
         id: "numbers",
         title: "⭐ Counting Stars",
         desc: "Practice numbers 1-10",
+        path: `/game/${childId}/numbers/journey`
       },
-      { id: "shapes", title: "⭐ Shape Match", desc: "Identify basic shapes" },
+      { id: "shapes", title: "⭐ Shape Match", desc: "Identify basic shapes", path: `/game/${childId}/shapes/journey` },
       {
         id: "animals",
         title: "⭐ Animal Sounds",
         desc: "Learn animal names and sounds",
+        path: `/game/${childId}/animals/journey`
       },
-      { id: "letters", title: "⭐ Alphabet Fun", desc: "Trace and learn ABCs" },
-      { id: "colors", title: "⭐ Color Splash", desc: "Mix and match colors" },
+      { id: "letters", title: "⭐ Alphabet Fun", desc: "Trace and learn ABCs", path: `/game/${childId}/letters/journey` },
+      { id: "colors", title: "⭐ Color Splash", desc: "Mix and match colors", path: `/game/${childId}/colors/journey` },
     ];
 
     if (!insights) return allOptions.slice(0, 3);
+
+    // Predictable random seed for today relative to child
+    const dateStr = new Date().toDateString();
+    const str = dateStr + childId;
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) hash = Math.imul(31, hash) + str.charCodeAt(i) | 0;
+    const random = () => {
+      hash = Math.imul(hash ^ (hash >>> 16), 2246822507);
+      hash = Math.imul(hash ^ (hash >>> 13), 3266489909);
+      return ((hash ^= hash >>> 16) >>> 0) / 4294967296;
+    };
+    random(); random(); random();
 
     // recommend the weakest subject if it exists
     let recs: any[] = [];
@@ -226,17 +240,18 @@ export default function ParentDashboard() {
       if (weakRec) recs.push(weakRec);
     }
 
-    // add randoms to fill up to 3
-    const shuffled = allOptions
-      .filter((o) => !recs.find((r) => r.id === o.id))
-      .sort(() => 0.5 - Math.random());
-    recs = [...recs, ...shuffled].slice(0, 3);
+    // add randoms predictably to fill up to 3
+    const optionsLeft = [...allOptions.filter((o) => !recs.find((r) => r.id === o.id))];
+    while (recs.length < 3 && optionsLeft.length > 0) {
+      const index = Math.floor(random() * optionsLeft.length);
+      recs.push(optionsLeft.splice(index, 1)[0]);
+    }
 
     return recs;
   };
 
   const insights = computeInsights();
-  const recommendations = getRecommendations(insights);
+  const recommendations = getRecommendations(insights, selectedChild?.id || "");
 
   const getRecentIssues = () => {
     if (!gameResults || gameResults.length === 0) return [];
@@ -382,7 +397,22 @@ export default function ParentDashboard() {
                     <span className="text-3xl">👑</span> KidLearn Academy App Premium
                   </h2>
                   <p className="text-[#a4b1cd] font-bold text-sm md:text-base max-w-[400px]">
-                    Unlock premium worlds, advanced games, and more! Premium features are activated individually for each child profile.
+                    {selectedChild?.isPremium ? (
+                      <>
+                        Premium is currently active for <strong>{selectedChild.name}</strong>.
+                        <br />
+                        {selectedChild.premiumExpireAt && (() => {
+                          const expireDate = selectedChild.premiumExpireAt.toDate();
+                          const days = Math.max(0, Math.ceil((expireDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)));
+                          if (days <= 5) {
+                            return <span className="text-red-400 font-black">Warning: Code expires in {days} {days === 1 ? 'day' : 'days'}! Extend now.</span>;
+                          }
+                          return <span className="text-green-400 font-bold">{days} {days === 1 ? 'day' : 'days'} remaining on this profile.</span>;
+                        })()}
+                      </>
+                    ) : (
+                      "Unlock premium worlds, advanced games, and more! Premium features are activated individually for each child profile."
+                    )}
                   </p>
                 </div>
 
@@ -392,7 +422,7 @@ export default function ParentDashboard() {
                       onClick={() => navigate('/activate')}
                       className="w-full sm:w-auto text-center bg-[#FFD93D] text-[#1a1a2e] font-black px-6 py-3 rounded-xl shadow-sm hover:scale-105 transition-transform"
                     >
-                      Activate Premium
+                      {selectedChild?.isPremium ? "Extend Premium" : "Activate Premium"}
                     </button>
                   </div>
                 </div>
@@ -556,12 +586,13 @@ export default function ParentDashboard() {
                     <span>💡</span> Recommended Today
                   </h3>
                   <p className="text-sm font-semibold text-[#666] mb-4">
-                    Smartly decided based on recent activity
+                    Guide your child through these tasks today to improve their weak areas.
                   </p>
                   <div className="flex flex-col gap-3">
                     {recommendations.map((rec, i) => (
                       <div
                         key={i}
+                        onClick={() => navigate(rec.path)}
                         className="flex items-center justify-between bg-[#f9f9fd] p-3 rounded-xl border-2 border-[#e4e4f0] hover:border-[#1aaee8] transition-colors cursor-pointer"
                       >
                         <div>
@@ -572,8 +603,8 @@ export default function ParentDashboard() {
                             {rec.desc}
                           </div>
                         </div>
-                        <span className="text-xl text-[#000] opacity-30 rounded-full w-8 h-8 flex items-center justify-center">
-                          ▶
+                        <span className="text-sm font-bold text-[#1aaee8] bg-[#e6f7ff] px-3 py-1 rounded-full">
+                          Play together ▶
                         </span>
                       </div>
                     ))}

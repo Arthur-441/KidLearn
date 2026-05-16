@@ -75,13 +75,14 @@ service cloud.firestore {
     }
 
     function isValidGameResultCreate(data) {
-      return data.keys().hasAll(['subject', 'score', 'total', 'starsEarned', 'issues', 'createdAt']) &&
-             data.keys().size() == 6 &&
+      return data.keys().hasAll(['subject', 'score', 'total', 'starsEarned', 'issues', 'createdAt', 'timeTaken']) &&
+             data.keys().size() == 7 &&
              data.subject is string && data.subject.size() > 0 && data.subject.size() <= 32 &&
              data.score is number && data.score >= 0 &&
              data.total is number && data.total > 0 &&
              data.starsEarned is number && data.starsEarned >= 0 &&
              data.issues is list && data.issues.size() <= 50 &&
+             data.timeTaken is number && data.timeTaken >= 0 &&
              data.createdAt == request.time;
     }
 
@@ -117,9 +118,10 @@ service cloud.firestore {
           incoming().get('gamesPlayed', 0) is number &&
           incoming().get('dailyMessage', "") is string && incoming().get('dailyMessage', "").size() <= 500 &&
           incoming().get('badges', []) is list && incoming().get('badges', []).size() <= 50) ||
-          (incoming().diff(existing()).affectedKeys().hasOnly(['isPremium', 'premiumActivatedAt', 'activationCode']) &&
+          (incoming().diff(existing()).affectedKeys().hasOnly(['isPremium', 'premiumActivatedAt', 'activationCode', 'premiumExpireAt']) &&
           incoming().isPremium == true &&
           incoming().premiumActivatedAt == request.time &&
+          incoming().premiumExpireAt is timestamp &&
           incoming().activationCode is string)
         )) || (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['isPremium']));
         

@@ -18,6 +18,7 @@ export async function saveGameResult(
   total: number,
   starsEarned: number,
   issues: string[],
+  timeTaken: number,
   badgeId: string | null = null,
 ) {
   const childRef = doc(db, "users", userId, "children", childId);
@@ -50,6 +51,7 @@ export async function saveGameResult(
       total,
       starsEarned,
       issues,
+      timeTaken,
       createdAt: serverTimestamp(),
     });
   } catch (err) {
