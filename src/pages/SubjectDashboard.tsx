@@ -338,29 +338,21 @@ export default function SubjectDashboard() {
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !childId) return;
     const fetchPremium = async () => {
-      const subRef = doc(db, "subscriptions", user.uid);
-      const subSnap = await getDoc(subRef);
-      if (subSnap.exists()) {
-        const data = subSnap.data();
-        if (data.subscriptionStatus === "active") {
-          const expiresEnd = data.expiresAt?.toDate
-            ? data.expiresAt.toDate()
-            : new Date(0);
-          const now = new Date();
-          const diffTime = expiresEnd.getTime() - now.getTime();
-          if (diffTime > 0) {
-            setIsPremium(true);
-          } else {
-            setIsPremium(false);
-            await updateDoc(subRef, { subscriptionStatus: "expired" });
-          }
+      const childRef = doc(db, "users", user.uid, "children", childId);
+      const childSnap = await getDoc(childRef);
+      if (childSnap.exists()) {
+        const data = childSnap.data();
+        if (data.isPremium) {
+          setIsPremium(true);
+        } else {
+          setIsPremium(false);
         }
       }
     };
     fetchPremium();
-  }, [user]);
+  }, [user, childId]);
 
   const playAudio = (url: string) => {
     const audio = new Audio(url);

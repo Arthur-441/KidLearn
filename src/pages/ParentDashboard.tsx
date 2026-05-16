@@ -23,6 +23,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import confetti from "canvas-confetti";
+import WelcomeGuideModal from "../components/WelcomeGuideModal";
+import FeatureGuide from "../components/FeatureGuide";
 
 export default function ParentDashboard() {
   const { user, loading } = useAuth();
@@ -37,12 +39,8 @@ export default function ParentDashboard() {
 
   const [dailyMessage, setDailyMessage] = useState("");
 
-  // Premium State
-  const [subscription, setSubscription] = useState<any>(null);
-  const [activationCodeInput, setActivationCodeInput] = useState("");
-  const [activationError, setActivationError] = useState("");
-  const [activationSuccess, setActivationSuccess] = useState("");
-  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+  // State no longer needed for inline premium logic
+  // Removed subscription, activation code states
 
   useEffect(() => {
     if (!loading && !user) navigate("/login");
@@ -63,129 +61,7 @@ export default function ParentDashboard() {
     return () => unsub();
   }, [user]);
 
-  useEffect(() => {
-    if (!user) return;
-    const fetchSub = async () => {
-      // Check subscription
-      const { doc, getDoc, updateDoc } = await import("firebase/firestore");
-      const subRef = doc(db, "subscriptions", user.uid);
-      const subSnap = await getDoc(subRef);
-      if (subSnap.exists()) {
-        const data = subSnap.data();
-        if (data.subscriptionStatus === "active") {
-          const expiresEnd = data.expiresAt?.toDate
-            ? data.expiresAt.toDate()
-            : new Date(0);
-          const now = new Date();
-          const diffTime = expiresEnd.getTime() - now.getTime();
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-          if (diffDays <= 0) {
-            // Expired
-            await updateDoc(subRef, { subscriptionStatus: "expired" });
-            data.subscriptionStatus = "expired";
-            setDaysRemaining(0);
-          } else {
-            setDaysRemaining(diffDays);
-          }
-        }
-        setSubscription(data);
-      }
-    };
-    fetchSub();
-  }, [user]);
-
-  const handleActivatePremium = async () => {
-    setActivationError("");
-    setActivationSuccess("");
-    if (!activationCodeInput.trim() || !user) return;
-
-    try {
-      const { doc, getDoc, setDoc, updateDoc, serverTimestamp } =
-        await import("firebase/firestore");
-      const codeRef = doc(db, "premiumCodes", activationCodeInput.trim());
-      const codeSnap = await getDoc(codeRef);
-
-      if (!codeSnap.exists()) {
-        setActivationError("This code is invalid.");
-        return;
-      }
-
-      const codeData = codeSnap.data();
-      if (codeData.status === "redeemed" || codeData.redeemed) {
-        setActivationError("This code has already been used.");
-        return;
-      }
-      if (codeData.status === "expired") {
-        setActivationError("This code has expired.");
-        return;
-      }
-
-      // Valid code, activate
-      const duration = codeData.durationDays || 30;
-      let expiryDate = new Date();
-
-      if (
-        subscription?.subscriptionStatus === "active" &&
-        subscription?.expiresAt
-      ) {
-        const currentExpiry = subscription.expiresAt.toDate
-          ? subscription.expiresAt.toDate()
-          : new Date(0);
-        if (currentExpiry.getTime() > new Date().getTime()) {
-          expiryDate = currentExpiry;
-        }
-      }
-      expiryDate.setDate(expiryDate.getDate() + duration);
-
-      // Update code
-      await updateDoc(codeRef, {
-        status: "redeemed",
-        redeemed: true,
-        activatedBy: user.uid,
-        activatedAt: serverTimestamp(),
-      });
-
-      // Update/Create Subscription
-      const subRef = doc(db, "subscriptions", user.uid);
-      await setDoc(
-        subRef,
-        {
-          parentId: user.uid,
-          activationCode: activationCodeInput.trim(),
-          activatedAt: serverTimestamp(),
-          expiresAt: expiryDate,
-          subscriptionStatus: "active",
-        },
-        { merge: true },
-      );
-
-      setSubscription({
-        parentId: user.uid,
-        activationCode: activationCodeInput.trim(),
-        activatedAt: new Date(),
-        expiresAt: { toDate: () => expiryDate },
-        subscriptionStatus: "active",
-      });
-      const now = new Date();
-      const diffTime = expiryDate.getTime() - now.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      setDaysRemaining(diffDays);
-
-      setActivationSuccess("Premium Activated Successfully!");
-      setActivationCodeInput("");
-
-      confetti({
-        particleCount: 150,
-        spread: 80,
-        origin: { y: 0.6 },
-      });
-    } catch (err) {
-      console.error(err);
-      setActivationError("An error occurred. Please try again.");
-    }
-  };
-
+  // Load game results
   useEffect(() => {
     if (!user || !selectedChild) return;
 
@@ -436,7 +312,10 @@ export default function ParentDashboard() {
                 </div>
                 <div className="flex-1 overflow-hidden">
                   <div className="font-bold text-sm truncate">{kid.name}</div>
-                  <div className="text-xs text-[#9999bb]">⭐ {kid.stars}</div>
+                  <div className="text-xs text-[#9999bb] flex items-center gap-1">
+                    <span>⭐ {kid.stars}</span>
+                    {kid.isPremium && <span className="ml-1 text-[10px] text-green-500 font-bold tracking-tight uppercase border border-green-200 rounded px-1 bg-green-50">Premium</span>}
+                  </div>
                 </div>
               </button>
             ))}
@@ -502,69 +381,20 @@ export default function ParentDashboard() {
                   <h2 className="text-2xl font-black font-['Baloo_2'] mb-1 flex items-center gap-2">
                     <span className="text-3xl">👑</span> KidLearn Academy App Premium
                   </h2>
-                  {subscription?.subscriptionStatus === "active" ? (
-                    <p className="text-[#a4b1cd] font-bold text-sm md:text-base">
-                      Your Premium Access is{" "}
-                      <span className="text-[#4CAF50] uppercase">Active</span>{" "}
-                      🌈
-                      <br />
-                      {daysRemaining !== null ? (
-                        daysRemaining <= 7 && daysRemaining > 0 ? (
-                          <span className="text-[#FF8C42]">
-                            Your Premium Access expires in {daysRemaining} days
-                            🌈.
-                            {daysRemaining <= 3 &&
-                              " Renew now to continue your child's learning adventure ⭐"}
-                          </span>
-                        ) : (
-                          <span>{daysRemaining} days remaining.</span>
-                        )
-                      ) : (
-                        ""
-                      )}
-                    </p>
-                  ) : (
-                    <p className="text-[#a4b1cd] font-bold text-sm md:text-base">
-                      Unlock premium worlds, advanced games, and more!{" "}
-                      {subscription?.subscriptionStatus === "expired" && (
-                        <span className="text-[#FF8C42]">
-                          Premium Access has expired.
-                        </span>
-                      )}
-                    </p>
-                  )}
+                  <p className="text-[#a4b1cd] font-bold text-sm md:text-base max-w-[400px]">
+                    Unlock premium worlds, advanced games, and more! Premium features are activated individually for each child profile.
+                  </p>
                 </div>
 
                 <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
                   <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                    <input
-                      type="text"
-                      className="p-2 rounded-lg text-black outline-none font-bold uppercase w-full sm:w-[200px]"
-                      placeholder="Activation Code"
-                      value={activationCodeInput}
-                      onChange={(e) =>
-                        setActivationCodeInput(e.target.value.toUpperCase())
-                      }
-                    />
                     <button
-                      onClick={handleActivatePremium}
-                      className="w-full sm:w-auto text-center bg-[#FFD93D] text-[#1a1a2e] font-black px-4 py-2 rounded-lg shadow-sm hover:scale-105 transition-transform"
+                      onClick={() => navigate('/activate')}
+                      className="w-full sm:w-auto text-center bg-[#FFD93D] text-[#1a1a2e] font-black px-6 py-3 rounded-xl shadow-sm hover:scale-105 transition-transform"
                     >
-                      {subscription?.subscriptionStatus === "active"
-                        ? "Extend"
-                        : "Activate"}
+                      Activate Premium
                     </button>
                   </div>
-                  {activationError && (
-                    <div className="text-red-400 text-sm font-bold">
-                      {activationError}
-                    </div>
-                  )}
-                  {activationSuccess && (
-                    <div className="text-green-400 text-sm font-bold">
-                      {activationSuccess}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -780,6 +610,15 @@ export default function ParentDashboard() {
           )}
         </div>
       </div>
+      
+      {/* Onboarding Guides - Rendered at root of dashboard */}
+      <WelcomeGuideModal />
+      <FeatureGuide 
+        featureId="parent_progress" 
+        title="Track Progress 📈" 
+        description="Here you can see your kids' game results, learning time, and strengths. It updates automatically when they play!"
+        position="bottom-left"
+      />
     </div>
   );
 }

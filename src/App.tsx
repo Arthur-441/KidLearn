@@ -18,6 +18,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Game from "./pages/Game";
 import AuthProvider from "./components/AuthProvider";
+import ActivationPage from "./pages/ActivationPage";
 
 import AdminDashboard from "./pages/AdminDashboard";
 
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/parent" element={<ParentDashboard />} />
+          <Route path="/activate" element={<ActivationPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/child/:childId" element={<ChildDashboard />} />
           <Route

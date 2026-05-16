@@ -71,7 +71,7 @@ export default function AdminDashboard() {
   const loadDashboardData = async () => {
     try {
       const codeSnap = await getDocs(
-        query(collection(db, "premiumCodes"), orderBy("createdAt", "desc")),
+        query(collection(db, "activationCodes"), orderBy("createdAt", "desc")),
       );
       setCodes(codeSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
 
@@ -89,7 +89,17 @@ export default function AdminDashboard() {
       const usersSnap = await getDocs(
         query(collection(db, "users"), orderBy("createdAt", "desc")),
       );
-      setUsersList(usersSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      
+      const usersWithChildren = await Promise.all(
+        usersSnap.docs.map(async (d) => {
+          const userData = d.data();
+          const childrenSnap = await getDocs(collection(db, "users", d.id, "children"));
+          const childrenFiles = childrenSnap.docs.map(cd => ({ id: cd.id, ...cd.data() }));
+          return { id: d.id, ...userData, childrenList: childrenFiles };
+        })
+      );
+      
+      setUsersList(usersWithChildren);
     } catch (err) {
       console.error(err);
     }
@@ -109,13 +119,16 @@ export default function AdminDashboard() {
       const newCode = `KL-${randomPart1}-${randomPart2}`;
 
       try {
-        await setDoc(doc(db, "premiumCodes", newCode), {
+        const expiresAtDate = new Date();
+        expiresAtDate.setDate(expiresAtDate.getDate() + newCodeDuration);
+        
+        await setDoc(doc(db, "activationCodes", newCode), {
           code: newCode,
           createdAt: serverTimestamp(),
           createdByAdmin: user?.uid,
-          status: "unused",
+          used: false,
           durationDays: newCodeDuration,
-          redeemed: false,
+          expiresAt: Timestamp.fromDate(expiresAtDate),
         });
       } catch (err) {
         console.error(err);
@@ -128,7 +141,7 @@ export default function AdminDashboard() {
   const deleteCode = async (codeId: string) => {
     if (!window.confirm("Are you sure you want to delete this code?")) return;
     try {
-      await deleteDoc(doc(db, "premiumCodes", codeId));
+      await deleteDoc(doc(db, "activationCodes", codeId));
       loadDashboardData();
     } catch (err) {
       console.error(err);
@@ -481,12 +494,12 @@ export default function AdminDashboard() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span
                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                c.status === "unused"
+                                !c.used
                                   ? "bg-green-100 text-green-800"
                                   : "bg-gray-100 text-gray-800"
                               }`}
                             >
-                              {c.status}
+                              {!c.used ? "unused" : "used"}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -501,14 +514,14 @@ export default function AdminDashboard() {
                               : "N/A"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            {c.status === "unused" && (
+                            {!c.used && (
                               <button
                                 onClick={() => deleteCode(c.id)}
                                 className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50 transition-colors"
                                 title="Delete"
                               >
                                 <Trash2 className="w-4 h-4" />
-                              </button>
+                                </button>
                             )}
                           </td>
                         </tr>
@@ -623,7 +636,8 @@ export default function AdminDashboard() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {usersList.map((u) => (
-                        <tr key={u.id} className="hover:bg-gray-50">
+                        <React.Fragment key={u.id}>
+                          <tr className="hover:bg-gray-50 border-t border-gray-100">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
                               {u.email}
@@ -772,6 +786,46 @@ export default function AdminDashboard() {
                             </div>
                           </td>
                         </tr>
+                        {/* Children Sub-rows */}
+                        {u.childrenList && u.childrenList.length > 0 && (
+                          <tr className="bg-gray-50 border-b border-gray-200">
+                            <td colSpan={6} className="px-6 py-4">
+                              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Children Profiles</div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {u.childrenList.map((child: any) => (
+                                  <div key={child.id} className="bg-white border border-gray-200 rounded-lg p-3 flex justify-between items-center shadow-sm">
+                                     <div className="flex items-center gap-3">
+                                       <div className="text-2xl bg-gray-50 h-10 w-10 flex items-center justify-center rounded-full border border-gray-100">{child.avatar}</div>
+                                       <div>
+                                         <div className="font-bold text-sm text-gray-900">{child.name}</div>
+                                         <div className={`text-[10px] uppercase font-bold tracking-wide mt-1 inline-block px-1.5 py-0.5 rounded-sm ${child.isPremium ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                           {child.isPremium ? 'Premium' : 'Free'}
+                                         </div>
+                                       </div>
+                                     </div>
+                                     <button 
+                                       onClick={async () => {
+                                         if (window.confirm(`Toggle premium for ${child.name}?`)) {
+                                           try {
+                                             const { doc, updateDoc } = await import("firebase/firestore");
+                                             await updateDoc(doc(db, "users", u.id, "children", child.id), {
+                                               isPremium: !child.isPremium
+                                             });
+                                             loadDashboardData();
+                                           } catch (e) { console.error(e); }
+                                         }
+                                       }}
+                                       className={`text-xs px-2.5 py-1.5 rounded-md ml-2 font-medium transition-colors ${child.isPremium ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}
+                                     >
+                                       {child.isPremium ? 'Revoke Premium' : 'Grant Premium'}
+                                     </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                       ))}
                     </tbody>
                   </table>

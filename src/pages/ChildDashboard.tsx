@@ -4,6 +4,7 @@ import { useAuth } from "../components/AuthProvider";
 import { db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { SOUND_URLS } from "../utils/sounds";
+import FeatureGuide from "../components/FeatureGuide";
 
 const BADGE_DEFS = [
   { id: "first_game", icon: "🎮", label: "First Game" },
@@ -436,6 +437,12 @@ export default function ChildDashboard() {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
+      <FeatureGuide 
+        featureId="child_dashboard" 
+        title="Welcome to your Dashboard! 🚀" 
+        description="Here you can see your daily message from mom/dad, track your stars and badges, and choose fun subjects to learn!"
+        position="bottom-right"
+      />
     </div>
   );
 }

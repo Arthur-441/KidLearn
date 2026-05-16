@@ -14,27 +14,51 @@ service cloud.firestore {
     function isSignedIn() { return request.auth != null; }
 
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin';
     }
 
     match /adminUsers/{userId} {
-      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow read, write: if isAdmin();
     }
 
     match /premiumCodes/{codeId} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow update: if isSignedIn() &&
+        (incoming().diff(existing()).affectedKeys().hasOnly(['status', 'redeemed', 'activatedBy', 'activatedAt']) &&
+        incoming().status == 'redeemed' &&
+        incoming().redeemed == true &&
+        incoming().activatedBy is string && 
+        incoming().activatedAt == request.time) || isAdmin();
+      allow create, delete: if isAdmin();
+    }
+
+    match /activationCodes/{codeId} {
+      allow read: if isSignedIn();
+      allow update: if isSignedIn() &&
+        existing().used == false &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['used', 'usedBy', 'usedAt']) &&
+        incoming().used == true &&
+        incoming().usedBy is string && 
+        incoming().usedAt == request.time;
+      
+      allow create, delete: if isAdmin();
     }
 
     match /subscriptions/{subscriptionId} {
       allow read: if isSignedIn() && (request.auth.uid == subscriptionId || isAdmin());
-      allow write: if isSignedIn() && (request.auth.uid == subscriptionId || isAdmin());
+      allow write: if isAdmin();
     }
 
     function isValidUserCreate(data) {
-      return data.keys().hasAll(['username', 'email', 'createdAt']) &&
+      return data.keys().hasAll(['username', 'email', 'stars', 'badges', 'gamesPlayed', 'createdAt', 'role', 'isPremium', 'subscriptionEndDate']) &&
+             data.keys().size() == 9 &&
              data.username is string && data.username.size() > 0 && data.username.size() <= 64 &&
              data.email is string && data.email.size() > 0 && data.email.size() <= 128 &&
+             data.stars == 0 &&
+             data.badges is list && data.badges.size() == 0 &&
+             data.gamesPlayed == 0 &&
+             data.role == 'user' &&
+             data.isPremium == false &&
              data.createdAt == request.time;
     }
 
@@ -66,8 +90,7 @@ service cloud.firestore {
       allow list: if isAdmin();
 
       allow create: if isSignedIn() && isValidId(userId) && request.auth.uid == userId &&
-                    (incoming().get('role', 'user') == 'user' && 
-                     incoming().get('isPremium', false) == false);
+                    isValidUserCreate(incoming());
 
       allow update: if (isSignedIn() && isValidId(userId) && request.auth.uid == userId && (
         (incoming().diff(existing()).affectedKeys().hasOnly(['stars', 'gamesPlayed'])) ||
@@ -77,23 +100,30 @@ service cloud.firestore {
       incoming().get('stars', 0) is number &&
       incoming().get('gamesPlayed', 0) is number &&
       incoming().get('badges', []) is list && incoming().get('badges', []).size() <= 50) || 
-      (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['role', 'isPremium', 'subscriptionEndDate']));
+      (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['role', 'isPremium', 'subscriptionEndDate']) &&
+       incoming().get('role', 'user') is string &&
+       incoming().get('isPremium', false) is bool);
 
       match /children/{childId} {
-        allow get: if isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId;
-        allow list: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(childId) && (request.auth.uid == userId || isAdmin());
+        allow list: if (isSignedIn() && isValidId(userId) && request.auth.uid == userId) || isAdmin();
         
         allow create: if isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId &&
                          isValidChildCreate(incoming());
 
-        allow update: if isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId && 
-          incoming().diff(existing()).affectedKeys().hasOnly(['dailyMessage', 'stars', 'gamesPlayed', 'badges', 'name', 'avatar', 'lastLoginDate', 'streak', 'dailyStars', 'dailyGames', 'dailyBadges', 'quest1Claimed', 'quest2Claimed', 'quest3Claimed', 'questCompleted']) &&
-        incoming().get('stars', 0) is number &&
-        incoming().get('gamesPlayed', 0) is number &&
-        incoming().get('dailyMessage', "") is string && incoming().get('dailyMessage', "").size() <= 500 &&
-        incoming().get('badges', []) is list && incoming().get('badges', []).size() <= 50;
+        allow update: if (isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId && (
+          (incoming().diff(existing()).affectedKeys().hasOnly(['dailyMessage', 'stars', 'gamesPlayed', 'badges', 'name', 'avatar', 'lastLoginDate', 'streak', 'dailyStars', 'dailyGames', 'dailyBadges', 'quest1Claimed', 'quest2Claimed', 'quest3Claimed', 'questCompleted']) &&
+          incoming().get('stars', 0) is number &&
+          incoming().get('gamesPlayed', 0) is number &&
+          incoming().get('dailyMessage', "") is string && incoming().get('dailyMessage', "").size() <= 500 &&
+          incoming().get('badges', []) is list && incoming().get('badges', []).size() <= 50) ||
+          (incoming().diff(existing()).affectedKeys().hasOnly(['isPremium', 'premiumActivatedAt', 'activationCode']) &&
+          incoming().isPremium == true &&
+          incoming().premiumActivatedAt == request.time &&
+          incoming().activationCode is string)
+        )) || (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['isPremium']));
         
-        allow delete: if isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId;
+        allow delete: if (isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId) || isAdmin();
 
         match /results/{resultId} {
           allow get: if isSignedIn() && isValidId(userId) && isValidId(childId) && isValidId(resultId) && request.auth.uid == userId;
