@@ -127,7 +127,8 @@ export default function ParentDashboard() {
       if (!data[r.subject]) {
         data[r.subject] = { subject: r.subject, totalScore: 0, totalGames: 0 };
       }
-      data[r.subject].totalScore += (r.score / r.total) * 100;
+      const scorePct = Math.min(100, Math.max(0, (r.score / Math.max(1, r.total)) * 100));
+      data[r.subject].totalScore += scorePct;
       data[r.subject].totalGames += 1;
     });
     return Object.values(data).map((d) => ({
@@ -147,7 +148,8 @@ export default function ParentDashboard() {
     gameResults.forEach((r) => {
       if (!subjectStats[r.subject])
         subjectStats[r.subject] = { score: 0, count: 0 };
-      subjectStats[r.subject].score += (r.score / r.total) * 100;
+      const scorePct = Math.min(100, Math.max(0, (r.score / Math.max(1, r.total)) * 100));
+      subjectStats[r.subject].score += scorePct;
       subjectStats[r.subject].count += 1;
 
       const resDate = r.createdAt?.toDate
@@ -191,10 +193,19 @@ export default function ParentDashboard() {
         ? "High 🎯"
         : "Developing 🌱";
 
+    const formatTime = (seconds: number) => {
+      if (!seconds) return "0 sec";
+      if (seconds < 60) return `${Math.round(seconds)} sec`;
+      const m = Math.floor(seconds / 60);
+      const s = Math.round(seconds % 60);
+      return s > 0 ? `${m}m ${s}s` : `${m} min`;
+    };
+
     return {
       strongest,
       weakest,
-      dailyTime: Math.round(totalTimeToday / 60), // in minutes
+      dailyTimeSec: totalTimeToday,
+      dailyTime: formatTime(totalTimeToday),
       growth,
       focusLevel,
     };
@@ -555,7 +566,7 @@ export default function ParentDashboard() {
                         Daily Learning Time
                       </div>
                       <div className="text-lg font-black text-[#8e24aa]">
-                        {insights?.dailyTime || 0} min
+                        {insights?.dailyTime || "0 sec"}
                       </div>
                     </div>
                     <div className="bg-[#e8f5e9] p-4 rounded-xl border border-[#e8f5e9]">

@@ -6,7 +6,7 @@ import firebaseConfig from "../firebase-applet-config.json";
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Use initializeFirestore with experimentalAutoDetectLongPolling
+// Use initializeFirestore with experimentalAutoDetectLongPolling to bypass strict firewalls
 export const db = initializeFirestore(app, {
   experimentalAutoDetectLongPolling: true
 }, firebaseConfig.firestoreDatabaseId);

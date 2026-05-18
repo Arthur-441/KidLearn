@@ -228,7 +228,7 @@ export default function LandingPage() {
           <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-10 md:gap-16 z-10 relative">
             <div className="flex-1 max-w-[580px] text-center md:text-left">
               <div className="inline-flex items-center gap-1.5 bg-[#9B5DE5]/10 text-[#9B5DE5] px-4 py-1.5 rounded-full text-sm font-bold border-2 border-[#9B5DE5]/20 mb-5">
-                🏆 Trusted by 50,000+ families
+                🏆 Trusted by Families
               </div>
               <h1 className="font-['Baloo_2'] text-4xl md:text-5xl lg:text-7xl font-extrabold leading-tight text-[#1a1a2e] mb-4">
                 Learning is <span className="text-[#FF6B35]">FUN</span>
