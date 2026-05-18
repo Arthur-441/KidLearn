@@ -75,6 +75,13 @@ export default function ChildDashboard() {
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
+    // Attempt to play audio greeting when dashboard loads
+    const audioUrl = "https://drive.google.com/uc?export=download&id=1oAOLqBtMgom7r_g7P4hrRi1PwWBa_ZYA";
+    const audio = new Audio(audioUrl);
+    audio.play().catch((e) => console.log("Audio play blocked by browser:", e));
+  }, []);
+
+  useEffect(() => {
     if (!loading && !user) navigate("/login");
   }, [user, loading, navigate]);
 

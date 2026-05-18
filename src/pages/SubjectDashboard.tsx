@@ -4,6 +4,7 @@ import { useAuth } from "../components/AuthProvider";
 import { db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { SOUND_URLS } from "../utils/sounds";
+import { LETTER_CARDS, NUMBER_CARDS, COLOR_CARDS } from "../components/cardsData";
 
 const SUBJECT_MODES: Record<string, any[]> = {
   shapes: [
@@ -153,6 +154,14 @@ const SUBJECT_MODES: Record<string, any[]> = {
       label: "Fish for letters",
       premium: true,
     },
+    {
+      mode: "letter_order",
+      title: "ABC Order",
+      icon: "🔤",
+      bg: "from-[#60A5FA] to-[#3B82F6]",
+      label: "Put letters in correct order",
+      premium: false,
+    },
   ],
   colors: [
     {
@@ -235,6 +244,30 @@ const SUBJECT_MODES: Record<string, any[]> = {
       icon: "🧺",
       bg: "from-[#FFD93D] to-[#F57C00]",
       label: "Catch exactly what you need!",
+      premium: false,
+    },
+    {
+      mode: "coming_soon_1",
+      title: "Number Ninja",
+      icon: "🥷",
+      bg: "from-[#9E9E9E] to-[#616161]",
+      label: "Coming soon",
+      premium: false,
+    },
+    {
+      mode: "coming_soon_2",
+      title: "Equation Explorer",
+      icon: "🚀",
+      bg: "from-[#9E9E9E] to-[#616161]",
+      label: "Coming soon",
+      premium: false,
+    },
+    {
+      mode: "coming_soon_3",
+      title: "Shape Counter",
+      icon: "🟣",
+      bg: "from-[#9E9E9E] to-[#616161]",
+      label: "Coming soon",
       premium: false,
     },
   ],
@@ -437,11 +470,120 @@ export default function SubjectDashboard() {
                     </span>
                   </div>
                   <div
-                    className="absolute inset-0 flex items-center justify-center p-5 text-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300"
+                    className="absolute inset-0 flex flex-col items-center justify-center p-5 text-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300"
                     style={{ backgroundColor: shape.color }}
                   >
                     <span className="text-white font-bold leading-tight text-sm md:text-base">
                       {shape.desc}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {subject === "letters" && (
+          <div className="mb-12 animate-[fadeUp_0.5s_ease-out]">
+            <h2 className="font-['Baloo_2'] text-2xl md:text-3xl font-black text-center mb-6 text-[#1a1a2e]">
+              Alphabet Explorer! 🔤
+            </h2>
+            <div className="flex flex-wrap gap-4 justify-center max-h-[600px] overflow-y-auto px-4 py-8 custom-scrollbar">
+              {LETTER_CARDS.map((letter) => (
+                <div
+                  key={letter.id}
+                  onMouseEnter={() => playAudio(SOUND_URLS.pop)}
+                  onClick={() => speakText(letter.desc)}
+                  className="relative group w-[120px] md:w-[150px] h-[140px] md:h-[170px] rounded-3xl overflow-hidden shadow-lg border-[3px] md:border-4 bg-white hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+                  style={{ borderColor: letter.color }}
+                >
+                  <div className="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300 group-hover:opacity-0 group-active:opacity-0">
+                    <span className="text-5xl md:text-6xl font-black text-[#1a1a2e] flex items-baseline gap-1" style={{ color: letter.color }}>
+                      {letter.upper}<span className="text-3xl md:text-4xl">{letter.lower}</span>
+                    </span>
+                  </div>
+                  <div
+                    className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300"
+                    style={{ backgroundColor: letter.color }}
+                  >
+                    <span className="text-5xl md:text-6xl mb-2 filter drop-shadow-md">
+                      {letter.icon}
+                    </span>
+                    <span className="text-white font-bold leading-tight text-lg md:text-xl font-['Baloo_2']">
+                      {letter.word}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {subject === "numbers" && (
+          <div className="mb-12 animate-[fadeUp_0.5s_ease-out]">
+            <h2 className="font-['Baloo_2'] text-2xl md:text-3xl font-black text-center mb-6 text-[#1a1a2e]">
+              Number Magic! ✨
+            </h2>
+            <div className="flex flex-wrap gap-4 justify-center">
+              {NUMBER_CARDS.map((item) => (
+                <div
+                  key={item.id}
+                  onMouseEnter={() => playAudio(SOUND_URLS.pop)}
+                  onClick={() => speakText(item.desc)}
+                  className="relative group w-[120px] md:w-[150px] h-[140px] md:h-[170px] rounded-3xl overflow-hidden shadow-lg border-[3px] md:border-4 bg-white hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+                  style={{ borderColor: item.color }}
+                >
+                  <div className="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300 group-hover:opacity-0 group-active:opacity-0">
+                    <span className="text-6xl font-black text-[#1a1a2e]" style={{ color: item.color }}>
+                      {item.num}
+                    </span>
+                  </div>
+                  <div
+                    className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300"
+                    style={{ backgroundColor: item.color }}
+                  >
+                    <span className="text-3xl md:text-4xl mb-2 filter drop-shadow-md flex flex-wrap justify-center max-w-full truncate overflow-hidden">
+                      {item.icon}
+                    </span>
+                    <span className="text-white font-bold leading-tight text-sm md:text-base font-['Baloo_2']">
+                      {item.word}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {subject === "colors" && (
+          <div className="mb-12 animate-[fadeUp_0.5s_ease-out]">
+            <h2 className="font-['Baloo_2'] text-2xl md:text-3xl font-black text-center mb-6 text-[#1a1a2e]">
+              Color Splash! 🎨
+            </h2>
+            <div className="flex flex-wrap gap-4 justify-center">
+              {COLOR_CARDS.map((item) => (
+                <div
+                  key={item.id}
+                  onMouseEnter={() => playAudio(SOUND_URLS.pop)}
+                  onClick={() => speakText(item.desc)}
+                  className="relative group w-[120px] md:w-[150px] h-[140px] md:h-[170px] rounded-3xl overflow-hidden shadow-lg border-[3px] md:border-4 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+                  style={{ borderColor: item.color, backgroundColor: item.color }}
+                >
+                  <div className="absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300 group-hover:opacity-0 group-active:opacity-0 bg-white">
+                    <div className="w-16 h-16 rounded-full mb-2 border-4 border-black/10 shadow-inner" style={{ backgroundColor: item.color }} />
+                    <span className="font-['Baloo_2'] font-black text-xl text-[#1a1a2e]">
+                      {item.colorName}
+                    </span>
+                  </div>
+                  <div
+                    className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300"
+                    style={{ backgroundColor: item.color }}
+                  >
+                    <span className="text-5xl md:text-6xl mb-2 filter drop-shadow-md">
+                      {item.icon}
+                    </span>
+                    <span className="text-white font-bold leading-tight text-sm md:text-base font-['Baloo_2']">
+                      {item.word}
                     </span>
                   </div>
                 </div>

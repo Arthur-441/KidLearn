@@ -49,16 +49,17 @@ export default function LetterCatchGame({
       letter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
     }
 
-    setFallingLetters((prev) => [
-      ...prev,
-      {
-        id: `fall-${Date.now()}-${Math.random()}`,
-        letter,
-        x: 10 + Math.random() * 80,
-        y: -10,
-        speed: 0.3 + Math.random() * 0.4,
-      },
-    ]);
+    const newItem = {
+      id: `fall-${Date.now()}-${Math.random()}`,
+      letter,
+      x: 10 + Math.random() * 80,
+      y: -10,
+      speed: 0.3 + Math.random() * 0.4,
+    };
+    
+    fallingLettersRef.current = [...fallingLettersRef.current, newItem];
+
+    setFallingLetters(fallingLettersRef.current);
   };
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export default function LetterCatchGame({
     if (round < maxRounds) {
       setTargetLetter(LETTERS[Math.floor(Math.random() * LETTERS.length)]);
       setCaughtCount(0);
+      fallingLettersRef.current = [];
       setFallingLetters([]);
     } else if (round > 0) {
       onComplete(score, Math.floor(score / 3) + 5, []);
@@ -76,9 +78,6 @@ export default function LetterCatchGame({
   }, [round]);
 
   const fallingLettersRef = useRef(fallingLetters);
-  useEffect(() => {
-    fallingLettersRef.current = fallingLetters;
-  }, [fallingLetters]);
 
   useEffect(() => {
     if (round >= maxRounds || !targetLetter) return;
@@ -123,6 +122,7 @@ export default function LetterCatchGame({
         newCaught.forEach(handleCatch);
       }
 
+      fallingLettersRef.current = kept;
       setFallingLetters(kept);
       animationFrame = requestAnimationFrame(animate);
     };

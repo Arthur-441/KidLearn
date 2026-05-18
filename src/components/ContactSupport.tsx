@@ -8,7 +8,7 @@ export default function ContactSupport() {
       </h3>
       <div className="flex justify-center gap-4">
         <a
-          href="https://wa.me/1234567890"
+          href="https://wa.me/256745635953"
           target="_blank"
           rel="noreferrer"
           className="flex flex-col items-center gap-2 p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow hover:scale-105"
@@ -17,14 +17,14 @@ export default function ContactSupport() {
           <span className="text-xs font-bold text-[#4a4a6a]">WhatsApp</span>
         </a>
         <a
-          href="mailto:support@kidlearn.com"
+          href="mailto:Arthur.l.shalom@gmail.com"
           className="flex flex-col items-center gap-2 p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow hover:scale-105"
         >
           <div className="text-2xl">✉️</div>
           <span className="text-xs font-bold text-[#4a4a6a]">Email</span>
         </a>
         <a
-          href="tel:1234567890"
+          href="tel:+256745635953"
           className="flex flex-col items-center gap-2 p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow hover:scale-105"
         >
           <div className="text-2xl">📞</div>

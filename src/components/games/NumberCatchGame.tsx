@@ -92,6 +92,7 @@ export default function NumberCatchGame({
       });
     }
 
+    objectsRef.current = newObjects;
     setObjects(newObjects);
   };
 
@@ -104,9 +105,6 @@ export default function NumberCatchGame({
   }, [round]);
 
   const objectsRef = useRef(objects);
-  useEffect(() => {
-    objectsRef.current = objects;
-  }, [objects]);
 
   const targetNumberRef = useRef(targetNumber);
   useEffect(() => {
@@ -186,6 +184,7 @@ export default function NumberCatchGame({
         }, 500);
       }
 
+      objectsRef.current = remaining;
       setObjects(remaining);
       animationFrame = requestAnimationFrame(animate);
     };
@@ -226,40 +225,35 @@ export default function NumberCatchGame({
         </div>
       </div>
 
-      <AnimatePresence>
-        {objects.map((obj) => (
-          <motion.div
-            key={obj.id}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 0.5 }}
-            className="absolute shadow-sm"
-            style={{
-              left: `${obj.x}%`,
-              top: `${obj.y}%`,
-              transform: "translateX(-50%)",
-            }}
-          >
-            <div className="relative text-5xl">
-              {obj.type}
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-black text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] text-xl w-full text-center">
-                {obj.isDots ? (
-                  <div className="flex flex-wrap justify-center items-center px-1 gap-0.5">
-                    {Array.from({ length: obj.dotsCount }).map((_, idx) => (
-                      <div
-                        key={idx}
-                        className="w-1.5 h-1.5 bg-black rounded-full"
-                      ></div>
-                    ))}
-                  </div>
-                ) : (
-                  obj.number
-                )}
-              </div>
+      {objects.map((obj) => (
+        <div
+          key={obj.id}
+          className="absolute shadow-sm"
+          style={{
+            left: `${obj.x}%`,
+            top: `${obj.y}%`,
+            transform: "translateX(-50%)",
+          }}
+        >
+          <div className="relative text-5xl">
+            {obj.type}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-black text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] text-xl w-full text-center">
+              {obj.isDots ? (
+                <div className="flex flex-wrap justify-center items-center px-1 gap-0.5">
+                  {Array.from({ length: obj.dotsCount }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="w-1.5 h-1.5 bg-black rounded-full"
+                    ></div>
+                  ))}
+                </div>
+              ) : (
+                obj.number
+              )}
             </div>
-          </motion.div>
-        ))}
-      </AnimatePresence>
+          </div>
+        </div>
+      ))}
 
       {/* Basket */}
       <div

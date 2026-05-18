@@ -8,6 +8,16 @@ export default function LandingPage() {
   const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showNoAdsNotice, setShowNoAdsNotice] = useState(true);
+
+  useEffect(() => {
+    if (showNoAdsNotice) {
+      const timer = setTimeout(() => {
+        setShowNoAdsNotice(false);
+      }, 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [showNoAdsNotice]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -25,6 +35,31 @@ export default function LandingPage() {
 
   return (
     <div className="bg-white min-h-screen text-[#1a1a2e]">
+      {/* NO ADS NOTICE */}
+      {showNoAdsNotice && (
+        <div className="fixed bottom-0 left-0 right-0 z-[100] p-4 md:p-6 animate-[slideUp_0.5s_ease-out] pointer-events-none">
+          <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] border-t-4 border-[#0CDA91] p-4 md:p-6 pointer-events-auto flex flex-col md:flex-row items-center gap-4 justify-between">
+            <div className="flex items-center gap-4">
+              <div className="text-4xl">🛡️</div>
+              <div>
+                <h3 className="font-['Baloo_2'] text-xl md:text-2xl font-extrabold text-[#1a1a2e]">
+                  100% Ad-Free & Safe
+                </h3>
+                <p className="text-[#555] font-medium text-sm md:text-base">
+                  We have a no ads policy, so the safety of your child on this website is guaranteed.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowNoAdsNotice(false)}
+              className="bg-[#0CDA91] hover:bg-[#00A86B] text-white font-extrabold py-3 px-8 rounded-full shadow-[0_4px_14px_rgba(12,218,145,0.4)] hover:-translate-y-1 transition-all w-full md:w-auto"
+            >
+              Ok
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* NAVBAR */}
       <nav
         className={`fixed top-0 left-0 right-0 z-50 h-[68px] flex items-center justify-between px-5 md:px-10 bg-white/95 backdrop-blur-md border-b-2 border-black/5 transition-shadow duration-300 ${scrolled ? "shadow-md" : ""}`}
@@ -228,7 +263,7 @@ export default function LandingPage() {
           <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-10 md:gap-16 z-10 relative">
             <div className="flex-1 max-w-[580px] text-center md:text-left">
               <div className="inline-flex items-center gap-1.5 bg-[#9B5DE5]/10 text-[#9B5DE5] px-4 py-1.5 rounded-full text-sm font-bold border-2 border-[#9B5DE5]/20 mb-5">
-                🏆 Trusted by Families
+                🏆 Trusted by families
               </div>
               <h1 className="font-['Baloo_2'] text-4xl md:text-5xl lg:text-7xl font-extrabold leading-tight text-[#1a1a2e] mb-4">
                 Learning is <span className="text-[#FF6B35]">FUN</span>

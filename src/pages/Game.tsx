@@ -15,6 +15,10 @@ import FoxBuddy from "../components/FoxBuddy";
 import LetterCatchGame from "../components/games/LetterCatchGame";
 import LetterPopGame from "../components/games/LetterPopGame";
 import LetterNinjaGame from "../components/games/LetterNinjaGame";
+import LetterFindGame from "../components/games/LetterFindGame";
+import WordBuilderGame from "../components/games/WordBuilderGame";
+import LetterOrderGame from "../components/games/LetterOrderGame";
+import SpaceDashGame from "../components/games/SpaceDashGame";
 import ShapeBuilderGame from "../components/games/ShapeBuilderGame";
 import ShapeSorterGame from "../components/games/ShapeSorterGame";
 import ShapeTracerGame from "../components/games/ShapeTracerGame";
@@ -864,6 +868,38 @@ export default function Game() {
               setFeedback={setFeedback}
             />
           )}
+          {mode === "letter_space" && (
+            <SpaceDashGame
+              onComplete={endGame}
+              playAudio={playAudio}
+              triggerReward={triggerReward}
+              setFeedback={setFeedback}
+            />
+          )}
+          {mode === "letter_find" && (
+            <LetterFindGame
+              onComplete={endGame}
+              playAudio={playAudio}
+              triggerReward={triggerReward}
+              setFeedback={setFeedback}
+            />
+          )}
+          {mode === "letter_build" && (
+            <WordBuilderGame
+              onComplete={endGame}
+              playAudio={playAudio}
+              triggerReward={triggerReward}
+              setFeedback={setFeedback}
+            />
+          )}
+          {mode === "letter_order" && (
+            <LetterOrderGame
+              onComplete={endGame}
+              playAudio={playAudio}
+              triggerReward={triggerReward}
+              setFeedback={setFeedback}
+            />
+          )}
           {mode === "shape_builder" && (
             <ShapeBuilderGame
               onComplete={endGame}
@@ -924,6 +960,10 @@ export default function Game() {
             "letter_pop",
             "letter_catch",
             "letter_ninja",
+            "letter_space",
+            "letter_find",
+            "letter_build",
+            "letter_order",
             "shape_builder",
             "shape_sorter",
             "shape_tracer",
@@ -937,8 +977,7 @@ export default function Game() {
                 Coming Soon!
               </h2>
               <p className="text-gray-500 mb-8 font-medium">
-                We are building this extraordinary game right now. Check back
-                later!
+                We are building this extraordinary game right now. Check back later!
               </p>
               <button
                 onClick={() => navigate(`/subject/${childId}/${subject}`)}
