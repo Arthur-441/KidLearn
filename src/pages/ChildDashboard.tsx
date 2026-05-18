@@ -74,12 +74,39 @@ export default function ChildDashboard() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
 
+  const [hasPlayedGreeting, setHasPlayedGreeting] = useState(false);
+
   useEffect(() => {
-    // Attempt to play audio greeting when dashboard loads
-    const audioUrl = "https://drive.google.com/uc?export=download&id=1oAOLqBtMgom7r_g7P4hrRi1PwWBa_ZYA";
-    const audio = new Audio(audioUrl);
-    audio.play().catch((e) => console.log("Audio play blocked by browser:", e));
-  }, []);
+    // Helper to play audio
+    const playAudioGreeting = () => {
+      if (hasPlayedGreeting) return;
+      const audioUrl = "https://drive.google.com/uc?export=download&id=1oAOLqBtMgom7r_g7P4hrRi1PwWBa_ZYA";
+      const audio = new Audio(audioUrl);
+      audio.play()
+        .then(() => {
+          setHasPlayedGreeting(true);
+        })
+        .catch((e) => console.log("Audio play blocked by browser:", e));
+    };
+
+    // Attempt immediately
+    playAudioGreeting();
+
+    // Fallback: interaction listener
+    const handleInteraction = () => {
+      if (!hasPlayedGreeting) {
+        playAudioGreeting();
+      }
+    };
+    
+    document.addEventListener("click", handleInteraction);
+    document.addEventListener("touchstart", handleInteraction);
+
+    return () => {
+      document.removeEventListener("click", handleInteraction);
+      document.removeEventListener("touchstart", handleInteraction);
+    };
+  }, [hasPlayedGreeting]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/login");
