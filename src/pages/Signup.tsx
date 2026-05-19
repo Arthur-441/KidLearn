@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { signInWithRedirect, GoogleAuthProvider } from "firebase/auth";
-import { auth } from "../firebase";
+import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "../firebase";
 import { useAuth } from "../components/AuthProvider";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Signup() {
   const { user, loading } = useAuth();
@@ -10,6 +12,10 @@ export default function Signup() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -22,7 +28,7 @@ export default function Signup() {
     setIsSubmitting(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithRedirect(auth, provider);
+      await signInWithPopup(auth, provider);
       // Navigation is handled by useEffect onAuthStateChanged
     } catch (err: any) {
       if (
@@ -36,12 +42,44 @@ export default function Signup() {
     }
   };
 
+  const handleEmailSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password || !username) return;
+    setErrorMsg("");
+    setIsSubmitting(true);
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName: username });
+      await setDoc(doc(db, "users", cred.user.uid), {
+        username: username,
+        email: cred.user.email,
+        stars: 0,
+        badges: [],
+        gamesPlayed: 0,
+        createdAt: serverTimestamp(),
+        role: "user",
+        isPremium: false,
+        subscriptionEndDate: null,
+      }, { merge: true });
+    } catch (err: any) {
+      if (err.code !== "auth/email-already-in-use" && err.code !== "auth/invalid-credential") {
+        console.error(err);
+      }
+      setErrorMsg(getFriendlyMessage(err.code));
+      setIsSubmitting(false);
+    }
+  };
+
   const getFriendlyMessage = (code: string) => {
     return (
       {
         "auth/popup-closed-by-user":
           "Login popup was closed. Please try again.",
         "auth/cancelled-popup-request": "Login popup. Please try again.",
+        "auth/email-already-in-use": "An account already exists with this email.",
+        "auth/invalid-email": "Please enter a valid email address.",
+        "auth/weak-password": "Password should be at least 6 characters.",
+        "auth/operation-not-allowed": "Email/password signup is not configured in this app.",
       }[code] || "Something went wrong. Please try again."
     );
   };
@@ -83,10 +121,60 @@ export default function Signup() {
             </div>
           )}
 
+          <form onSubmit={handleEmailSignup} className="flex flex-col gap-4 mb-4">
+            <input
+              type="text"
+              placeholder="Username or Parent's Name"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              className="w-full py-3.5 px-4 bg-white text-[#4a4a6a] border-2 border-[#e4e4f0] rounded-xl text-[15px] font-bold outline-none transition-all focus:border-[#FF8C42]"
+            />
+            <input
+              type="email"
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full py-3.5 px-4 bg-white text-[#4a4a6a] border-2 border-[#e4e4f0] rounded-xl text-[15px] font-bold outline-none transition-all focus:border-[#FF8C42]"
+            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full py-3.5 px-4 bg-white text-[#4a4a6a] border-2 border-[#e4e4f0] rounded-xl text-[15px] font-bold outline-none transition-all focus:border-[#FF8C42] pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9999bb] hover:text-[#FF8C42] transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-3.5 bg-[#FF8C42] text-white rounded-xl text-[16px] font-extrabold cursor-pointer transition-all hover:bg-[#ff7a26] active:scale-95 disabled:opacity-65"
+            >
+              {isSubmitting ? "Creating…" : "Sign Up"}
+            </button>
+          </form>
+
+          <div className="flex items-center gap-2.5 my-4 text-sm text-[#9999bb] before:content-[''] before:flex-1 before:h-px before:bg-[#e4e4f0] after:content-[''] after:flex-1 after:h-px after:bg-[#e4e4f0]">
+            OR
+          </div>
+
           <button
             onClick={handleGoogleSignup}
             disabled={isSubmitting}
-            className="w-full py-3.5 bg-white text-[#4a4a6a] border-2 border-[#e4e4f0] rounded-full text-[16px] font-extrabold cursor-pointer min-h-[50px] flex items-center justify-center gap-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#4ECAFC] hover:shadow-md active:scale-95 disabled:opacity-65 disabled:cursor-not-allowed mb-4"
+            type="button"
+            className="w-full py-3.5 bg-white text-[#4a4a6a] border-2 border-[#e4e4f0] rounded-xl text-[16px] font-extrabold cursor-pointer flex items-center justify-center gap-3 transition-all hover:border-[#4ECAFC] active:scale-95 disabled:opacity-65"
           >
             <svg viewBox="0 0 48 48" className="w-5 h-5">
               <path
@@ -106,11 +194,10 @@ export default function Signup() {
                 d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
               />
             </svg>
-            {isSubmitting ? "Connecting…" : "Continue with Google"}
+            Continue with Google
           </button>
 
-          <div className="flex items-center gap-2.5 my-4 text-sm text-[#9999bb] before:content-[''] before:flex-1 before:h-px before:bg-[#e4e4f0] after:content-[''] after:flex-1 after:h-px after:bg-[#e4e4f0]"></div>
-          <p className="text-center text-[13.5px] text-[#4a4a6a]">
+          <div className="mt-4 text-center text-[13.5px] text-[#4a4a6a]">
             Have an account?{" "}
             <Link
               to="/login"
@@ -118,7 +205,7 @@ export default function Signup() {
             >
               Login
             </Link>
-          </p>
+          </div>
         </div>
       </div>
     </div>

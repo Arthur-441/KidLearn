@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { signInWithRedirect, GoogleAuthProvider } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { useAuth } from "../components/AuthProvider";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const { user, loading } = useAuth();
@@ -10,6 +11,9 @@ export default function Login() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -22,7 +26,7 @@ export default function Login() {
     setIsSubmitting(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithRedirect(auth, provider);
+      await signInWithPopup(auth, provider);
       // Navigation is handled by useEffect and getRedirectResult is unneeded since AuthProvider listens to onAuthStateChanged
     } catch (err: any) {
       if (
@@ -36,12 +40,33 @@ export default function Login() {
     }
   };
 
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+    setErrorMsg("");
+    setIsSubmitting(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // Navigation is handled by useEffect
+    } catch (err: any) {
+      if (err.code !== "auth/invalid-credential") {
+        console.error(err);
+      }
+      setErrorMsg(getFriendlyMessage(err.code));
+      setIsSubmitting(false);
+    }
+  };
+
   const getFriendlyMessage = (code: string) => {
     return (
       {
         "auth/popup-closed-by-user":
           "Login popup was closed. Please try again.",
         "auth/cancelled-popup-request": "Login popup. Please try again.",
+        "auth/invalid-credential": "Email or password is incorrect. (Did you sign up with Google?)",
+        "auth/user-not-found": "No account found with this email.",
+        "auth/wrong-password": "Email or password is incorrect.",
+        "auth/operation-not-allowed": "Email/password login is not configured in this app.",
       }[code] || "Something went wrong. Please try again."
     );
   };
@@ -80,10 +105,51 @@ export default function Login() {
             </div>
           )}
 
+          <form onSubmit={handleEmailLogin} className="flex flex-col gap-4 mb-4">
+            <input
+              type="email"
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full py-3.5 px-4 bg-white text-[#4a4a6a] border-2 border-[#e4e4f0] rounded-xl text-[15px] font-bold outline-none transition-all focus:border-[#1aaee8]"
+            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full py-3.5 px-4 bg-white text-[#4a4a6a] border-2 border-[#e4e4f0] rounded-xl text-[15px] font-bold outline-none transition-all focus:border-[#1aaee8] pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9999bb] hover:text-[#1aaee8] transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-3.5 bg-[#1aaee8] text-white rounded-xl text-[16px] font-extrabold cursor-pointer transition-all hover:bg-[#159bd4] active:scale-95 disabled:opacity-65"
+            >
+              {isSubmitting ? "Logging in…" : "Log In"}
+            </button>
+          </form>
+
+          <div className="flex items-center gap-2.5 my-4 text-sm text-[#9999bb] before:content-[''] before:flex-1 before:h-px before:bg-[#e4e4f0] after:content-[''] after:flex-1 after:h-px after:bg-[#e4e4f0]">
+            OR
+          </div>
+
           <button
             onClick={handleGoogleLogin}
             disabled={isSubmitting}
-            className="w-full py-3.5 bg-white text-[#4a4a6a] border-2 border-[#e4e4f0] rounded-full text-[16px] font-extrabold cursor-pointer min-h-[50px] flex items-center justify-center gap-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#4ECAFC] hover:shadow-md active:scale-95 disabled:opacity-65 disabled:cursor-not-allowed mb-4"
+            type="button"
+            className="w-full py-3.5 bg-white text-[#4a4a6a] border-2 border-[#e4e4f0] rounded-xl text-[16px] font-extrabold cursor-pointer flex items-center justify-center gap-3 transition-all hover:border-[#4ECAFC] active:scale-95 disabled:opacity-65"
           >
             <svg viewBox="0 0 48 48" className="w-5 h-5">
               <path
@@ -103,11 +169,10 @@ export default function Login() {
                 d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
               />
             </svg>
-            {isSubmitting ? "Connecting…" : "Continue with Google"}
+            Continue with Google
           </button>
 
-          <div className="flex items-center gap-2.5 my-5 text-sm text-[#9999bb] before:content-[''] before:flex-1 before:h-px before:bg-[#e4e4f0] after:content-[''] after:flex-1 after:h-px after:bg-[#e4e4f0]"></div>
-          <p className="text-center text-[13.5px] text-[#4a4a6a]">
+          <div className="mt-5 text-center text-[13.5px] text-[#4a4a6a]">
             New here?{" "}
             <Link
               to="/signup"
@@ -115,7 +180,7 @@ export default function Login() {
             >
               Sign up
             </Link>
-          </p>
+          </div>
         </div>
       </div>
     </div>
