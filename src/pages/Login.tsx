@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { signInWithRedirect, GoogleAuthProvider } from "firebase/auth";
+import { auth } from "../firebase";
 import { useAuth } from "../components/AuthProvider";
 
 export default function Login() {
@@ -23,24 +22,8 @@ export default function Login() {
     setIsSubmitting(true);
     try {
       const provider = new GoogleAuthProvider();
-      const cred = await signInWithPopup(auth, provider);
-
-      const userDoc = await getDoc(doc(db, "users", cred.user.uid));
-      if (!userDoc.exists()) {
-        await setDoc(doc(db, "users", cred.user.uid), {
-          username:
-            cred.user.displayName || cred.user.email?.split("@")[0] || "Parent",
-          email: cred.user.email,
-          stars: 0,
-          badges: [],
-          gamesPlayed: 0,
-          createdAt: serverTimestamp(),
-          role: "user",
-          isPremium: false,
-          subscriptionEndDate: null,
-        });
-      }
-      // Navigation is handled by useEffect
+      await signInWithRedirect(auth, provider);
+      // Navigation is handled by useEffect and getRedirectResult is unneeded since AuthProvider listens to onAuthStateChanged
     } catch (err: any) {
       if (
         err.code !== "auth/popup-closed-by-user" &&

@@ -41,7 +41,24 @@ export default function AuthProvider({
               isPremium: data.isPremium || false,
             });
           } else {
-            setUser(currentUser);
+            // Create user document if it doesn't exist
+            const { setDoc, serverTimestamp } = await import("firebase/firestore");
+            await setDoc(doc(db, "users", currentUser.uid), {
+              username: currentUser.displayName || currentUser.email?.split("@")[0] || "Parent",
+              email: currentUser.email,
+              stars: 0,
+              badges: [],
+              gamesPlayed: 0,
+              createdAt: serverTimestamp(),
+              role: "user",
+              isPremium: false,
+              subscriptionEndDate: null,
+            });
+            setUser({
+              ...currentUser,
+              role: "user",
+              isPremium: false,
+            });
           }
         } catch (error) {
           console.error("Error fetching user role", error);

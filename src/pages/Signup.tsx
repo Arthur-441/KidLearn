@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { signInWithRedirect, GoogleAuthProvider } from "firebase/auth";
+import { auth } from "../firebase";
 import { useAuth } from "../components/AuthProvider";
 
 export default function Signup() {
@@ -23,24 +22,7 @@ export default function Signup() {
     setIsSubmitting(true);
     try {
       const provider = new GoogleAuthProvider();
-      const cred = await signInWithPopup(auth, provider);
-
-      // Check if user exists before creating
-      const userDoc = await getDoc(doc(db, "users", cred.user.uid));
-      if (!userDoc.exists()) {
-        await setDoc(doc(db, "users", cred.user.uid), {
-          username:
-            cred.user.displayName || cred.user.email?.split("@")[0] || "Parent",
-          email: cred.user.email,
-          stars: 0,
-          badges: [],
-          gamesPlayed: 0,
-          createdAt: serverTimestamp(),
-          role: "user",
-          isPremium: false,
-          subscriptionEndDate: null,
-        });
-      }
+      await signInWithRedirect(auth, provider);
       // Navigation is handled by useEffect onAuthStateChanged
     } catch (err: any) {
       if (
