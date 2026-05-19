@@ -378,7 +378,11 @@ export default function SubjectDashboard() {
       if (childSnap.exists()) {
         const data = childSnap.data();
         if (data.isPremium) {
-          setIsPremium(true);
+          if (data.premiumExpireAt && data.premiumExpireAt.toDate() < new Date()) {
+            setIsPremium(false);
+          } else {
+            setIsPremium(true);
+          }
         } else {
           setIsPremium(false);
         }

@@ -414,7 +414,11 @@ export default function ParentDashboard() {
                         <br />
                         {selectedChild.premiumExpireAt && (() => {
                           const expireDate = selectedChild.premiumExpireAt.toDate();
-                          const days = Math.max(0, Math.ceil((expireDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)));
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const exp = new Date(expireDate);
+                          exp.setHours(0, 0, 0, 0);
+                          const days = Math.max(0, Math.round((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
                           if (days <= 5) {
                             return <span className="text-red-400 font-black">Warning: Code expires in {days} {days === 1 ? 'day' : 'days'}! Extend now.</span>;
                           }
