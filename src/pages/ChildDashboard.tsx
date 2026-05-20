@@ -5,15 +5,26 @@ import { db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { SOUND_URLS } from "../utils/sounds";
 import FeatureGuide from "../components/FeatureGuide";
+import confetti from "canvas-confetti";
 
 const BADGE_DEFS = [
   { id: "first_game", icon: "🎮", label: "First Game" },
   { id: "star_5", icon: "⭐", label: "5 Stars" },
   { id: "star_20", icon: "🌟", label: "20 Stars" },
   { id: "star_50", icon: "💫", label: "50 Stars" },
+  { id: "star_100", icon: "✨", label: "100 Stars" },
   { id: "games_5", icon: "🕹️", label: "5 Games" },
+  { id: "games_10", icon: "👾", label: "10 Games" },
+  { id: "games_20", icon: "🎲", label: "20 Games" },
   { id: "color_wizard", icon: "🎨", label: "Color Wizard" },
+  { id: "shape_master", icon: "🔶", label: "Shape Master" },
+  { id: "math_whiz", icon: "🔢", label: "Math Whiz" },
+  { id: "animal_expert", icon: "🦒", label: "Animal Expert" },
   { id: "daily_hero", icon: "🦸", label: "Daily Hero" },
+  { id: "story_master", icon: "📚", label: "Story Master" },
+  { id: "curious_explorer", icon: "🔭", label: "Curious Explorer" },
+  { id: "letter_hero", icon: "🔤", label: "Letter Hero" },
+  { id: "rhymes_star", icon: "🎵", label: "Rhymes Star" }
 ];
 
 const SUBJECTS = [
@@ -178,6 +189,47 @@ export default function ChildDashboard() {
     if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
     const audio = new Audio(SOUND_URLS.quest);
     audio.play().catch(() => {});
+    setTimeout(() => {
+        const audio2 = new Audio(SOUND_URLS.awesome);
+        audio2.play().catch(() => {});
+    }, 400);
+
+    // Confetti animation
+    const duration = 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+    const randomInRange = (min: number, max: number) =>
+      Math.random() * (max - min) + min;
+
+    const interval: any = setInterval(function () {
+      const timeLeft = animationEnd - Date.now();
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 50 * (timeLeft / 2000);
+      confetti(
+        Object.assign({}, defaults, {
+          particleCount,
+          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+          shapes: ['star'] as confetti.Shape[],
+          colors: ['#FFE400', '#FFBD00', '#E89400', '#FFCA6C', '#FDFFB8']
+        })
+      );
+      confetti(
+        Object.assign({}, defaults, {
+          particleCount,
+          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+          shapes: ['star'] as confetti.Shape[],
+          colors: ['#FFE400', '#FFBD00', '#E89400', '#FFCA6C', '#FDFFB8']
+        })
+      );
+    }, 250);
+
+    setTimeout(() => {
+        clearInterval(interval);
+    }, 1000);
 
     const updates: any = {};
     updates[`quest${questId}Claimed`] = true;
@@ -214,16 +266,23 @@ export default function ChildDashboard() {
   if (loading || !profile)
     return <div className="min-h-screen bg-[#f0f4ff] pt-[62px]"></div>;
 
+  // Calculate daily quest variations based on date
+  const todayDateObj = new Date();
+  const dayOfYear = Math.floor((todayDateObj.getTime() - new Date(todayDateObj.getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
+  const q1Stars = 5 + ((dayOfYear % 3) * 5); // 5, 10, or 15
+  const q2Games = 2 + (dayOfYear % 3); // 2, 3, or 4
+  const q3Badges = 1; // Always 1 badge for simplicity
+
   return (
     <div className="bg-[#f0f4ff] min-h-screen text-[#1a1a2e] pt-[62px] font-['Nunito']">
       <nav className="fixed top-0 left-0 right-0 z-[200] h-[62px] bg-white border-b-2 border-[#e8e8f4] flex items-center justify-between px-4 md:px-9 shadow-sm">
         <div className="flex items-center gap-4">
-          <Link
-            to="/dashboard"
-            className="bg-[#f0f4ff] text-[#4a4a6a] px-3 py-1.5 rounded-full text-[13px] font-bold no-underline"
+          <button
+            onClick={() => navigate(-1)}
+            className="bg-[#f0f4ff] text-[#4a4a6a] px-3 py-1.5 rounded-full text-[13px] font-bold no-underline cursor-pointer"
           >
             ← Back
-          </Link>
+          </button>
           <span className="text-[20px] font-extrabold font-['Baloo_2'] text-[#1aaee8]">
             🎈 Kid<em className="text-[#FF8C42] not-italic">Learn</em>
           </span>
@@ -296,9 +355,6 @@ export default function ChildDashboard() {
             <h2 className="font-['Baloo_2'] text-2xl md:text-3xl font-black text-[#1a1a2e]">
               Daily Quests
             </h2>
-            <button className="text-[#1aaee8] font-bold text-sm tracking-wide uppercase hover:underline">
-              View All
-            </button>
           </div>
 
           <div className="flex flex-col gap-6">
@@ -312,24 +368,24 @@ export default function ChildDashboard() {
                 </div>
                 <div className="flex-1">
                   <div className="font-bold text-[#4a4a6a] mb-2 text-lg">
-                    Earn 10 Stars ⭐
+                    Earn {q1Stars} Stars ⭐
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex-1 h-5 bg-[#f0f4ff] rounded-full overflow-hidden relative border-2 border-[#e6ebf5]">
                       <div
                         className="absolute top-0 bottom-0 left-0 bg-[#FFD93D] rounded-full transition-all duration-500 ease-out"
                         style={{
-                          width: `${Math.min(100, (profile?.dailyStars || 0) * 10)}%`,
+                          width: `${Math.min(100, ((profile?.dailyStars || 0) / q1Stars) * 100)}%`,
                         }}
                       ></div>
                       <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-[#8c7414]">
-                        {Math.min(10, profile?.dailyStars || 0)} / 10
+                        {Math.min(q1Stars, profile?.dailyStars || 0)} / {q1Stars}
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              {(profile?.dailyStars || 0) >= 10 && !profile?.quest1Claimed && (
+              {(profile?.dailyStars || 0) >= q1Stars && !profile?.quest1Claimed && (
                 <button
                   onClick={() => claimQuest(1)}
                   className="shrink-0 bg-[#FFD93D] hover:bg-[#facd1c] text-[#8c7414] font-black text-sm px-6 py-3 rounded-full shadow-md hover:-translate-y-0.5 transition-transform active:scale-95 uppercase tracking-wide"
@@ -354,24 +410,24 @@ export default function ChildDashboard() {
                 </div>
                 <div className="flex-1">
                   <div className="font-bold text-[#4a4a6a] mb-2 text-lg">
-                    Play 3 Games 🎮
+                    Play {q2Games} Games 🎮
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex-1 h-5 bg-[#f0f4ff] rounded-full overflow-hidden relative border-2 border-[#e6ebf5]">
                       <div
                         className="absolute top-0 bottom-0 left-0 bg-[#FF8C42] rounded-full transition-all duration-500 ease-out"
                         style={{
-                          width: `${Math.min(100, (profile?.dailyGames || 0) * 33.33)}%`,
+                          width: `${Math.min(100, ((profile?.dailyGames || 0) / q2Games) * 100)}%`,
                         }}
                       ></div>
                       <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-[#fff]">
-                        {Math.min(3, profile?.dailyGames || 0)} / 3
+                        {Math.min(q2Games, profile?.dailyGames || 0)} / {q2Games}
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              {(profile?.dailyGames || 0) >= 3 && !profile?.quest2Claimed && (
+              {(profile?.dailyGames || 0) >= q2Games && !profile?.quest2Claimed && (
                 <button
                   onClick={() => claimQuest(2)}
                   className="shrink-0 bg-[#FF8C42] hover:bg-[#f67a2a] text-white font-black text-sm px-6 py-3 rounded-full shadow-md hover:-translate-y-0.5 transition-transform active:scale-95 uppercase tracking-wide"
@@ -403,17 +459,17 @@ export default function ChildDashboard() {
                       <div
                         className="absolute top-0 bottom-0 left-0 bg-[#4ECAFC] rounded-full transition-all duration-500 ease-out"
                         style={{
-                          width: `${Math.min(100, (profile?.dailyBadges || 0) * 100)}%`,
+                          width: `${Math.min(100, ((profile?.dailyBadges || 0) / q3Badges) * 100)}%`,
                         }}
                       ></div>
                       <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-[#8c7414]">
-                        {Math.min(1, profile?.dailyBadges || 0)} / 1
+                        {Math.min(q3Badges, profile?.dailyBadges || 0)} / {q3Badges}
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              {(profile?.dailyBadges || 0) >= 1 && !profile?.quest3Claimed && (
+              {(profile?.dailyBadges || 0) >= q3Badges && !profile?.quest3Claimed && (
                 <button
                   onClick={() => claimQuest(3)}
                   className="shrink-0 bg-[#4ECAFC] hover:bg-[#2abcf6] text-white font-black text-sm px-6 py-3 rounded-full shadow-md hover:-translate-y-0.5 transition-transform active:scale-95 uppercase tracking-wide"

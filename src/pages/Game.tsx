@@ -98,13 +98,41 @@ export default function Game() {
     setRewards((prev) => [...prev, { id, type, amount, badgeName }]);
 
     // Play confetti
-    confetti({
-      particleCount: type === "badge" ? 100 : 40,
-      spread: type === "badge" ? 80 : 50,
-      origin: { y: 0.8 },
-      colors: ["#FFD93D", "#4ECAFC", "#ff8fa3", "#8DE365", "#9B5DE5"],
-      zIndex: 100,
-    });
+    if (type === "badge") {
+      const end = Date.now() + 2.5 * 1000;
+      const colors = ["#FFD93D", "#4ECAFC", "#ff8fa3", "#8DE365", "#9B5DE5"];
+
+      (function frame() {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.8 },
+          colors: colors,
+          zIndex: 100,
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.8 },
+          colors: colors,
+          zIndex: 100,
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      })();
+    } else {
+      confetti({
+        particleCount: 40,
+        spread: 50,
+        origin: { y: 0.8 },
+        colors: ["#FFD93D", "#4ECAFC", "#ff8fa3", "#8DE365", "#9B5DE5"],
+        zIndex: 100,
+      });
+    }
 
     // Add vibration if supported and badge earned
     if ("vibrate" in navigator) {
@@ -150,9 +178,17 @@ export default function Game() {
 
   useEffect(() => {
     if (subject) {
-      if (mode === "lesson" || subject === "rhymes" || mode === "interactive") {
+      if (mode?.startsWith("lesson") || subject === "rhymes" || mode === "interactive") {
         const lessons = getLessons(subject);
-        const sliced = lessons.slice(0, Math.min(5, lessons.length));
+        let sliced = lessons.slice(0, Math.min(5, lessons.length));
+        
+        if (mode && mode.includes("_")) {
+          const lessonIndex = parseInt(mode.split("_")[1]);
+          if (!isNaN(lessonIndex) && lessonIndex < lessons.length) {
+            sliced = [lessons[lessonIndex]];
+          }
+        }
+        
         setQuestions(sliced);
         setOriginalCount(sliced.length > 0 ? sliced.length : 5);
       } else {
@@ -170,23 +206,22 @@ export default function Game() {
       const utterance = new SpeechSynthesisUtterance(text);
 
       if (subject === "rhymes") {
-        utterance.rate = 0.65; // Slower for rhymes
-        utterance.pitch = 1.3; // Higher, more sing-song pitch
-      } else if (mode === "lesson") {
-        utterance.rate = 0.75; // Slightly slower for learning
-        utterance.pitch = 1.25; // Warm, friendly, higher pitch for natural emotional connection
+        utterance.rate = 0.75; // Slower for rhymes
+        utterance.pitch = 1.25; // Higher, more sing-song pitch
+      } else if (mode?.startsWith("lesson")) {
+        utterance.rate = 0.85; // Slightly slower for learning
+        utterance.pitch = 1.1; // Warm, friendly, higher pitch for natural emotional connection
       } else {
-        utterance.rate = 0.85; // Normal pace
-        utterance.pitch = 1.15; // Slightly higher pitch for friendly tone
+        utterance.rate = 0.9; // Normal pace
+        utterance.pitch = 1.05; // Slightly higher pitch for friendly tone
       }
 
       utterance.lang = "en-US"; // Help select better natural voice engines
 
-      // Try to find a friendly female voice
       const voices = window.speechSynthesis.getVoices();
       const preferredNames = [
-        "Google UK English Female",
         "Google US English",
+        "Google UK English Female",
         "Samantha",
         "Victoria",
         "Karen",
@@ -203,10 +238,10 @@ export default function Game() {
           (voice) =>
             voice.name.toLowerCase().includes("female") ||
             voice.name.toLowerCase().includes("woman") ||
-            voice.name.toLowerCase().includes("samantha"),
+            voice.name.toLowerCase().includes("samantha") ||
+            voice.name.toLowerCase().includes("girl"),
         );
       }
-
       if (femaleVoice) {
         utterance.voice = femaleVoice;
       }
@@ -305,7 +340,7 @@ export default function Game() {
       const lesson = currentItem as LessonContent;
       const currentScene = lesson.scenes?.[currentSceneIndex];
       const hasInteraction =
-        mode === "interactive" && currentScene?.interaction;
+        (mode === "interactive" || mode?.startsWith("lesson")) && currentScene?.interaction;
       const canAdvance =
         readingFinished && (!hasInteraction || interactionSolved);
 
@@ -523,6 +558,16 @@ export default function Game() {
     let badgeId: string | null = null;
     if (finalStars >= 5) badgeId = "star_5";
     if (finalStars >= 20) badgeId = "star_20";
+    if (finalStars >= 50) badgeId = "star_50";
+    if (finalStars >= 100) badgeId = "star_100";
+    if (subject === "colors" && finalScore >= 5) badgeId = "color_wizard";
+    if (subject === "shapes" && finalScore >= 5) badgeId = "shape_master";
+    if (subject === "numbers" && finalScore >= 5) badgeId = "math_whiz";
+    if (subject === "animals" && finalScore >= 5) badgeId = "animal_expert";
+    if (subject === "stories" && finalScore >= 5) badgeId = "story_master";
+    if (subject === "letters" && finalScore >= 5) badgeId = "letter_hero";
+    if (subject === "rhymes" && finalScore >= 5) badgeId = "rhymes_star";
+    if (subject === "emotions" && finalScore >= 5) badgeId = "curious_explorer";
     if (finalScore >= 1 && !badgeId) badgeId = "first_game";
 
     if (badgeId) {
@@ -530,7 +575,17 @@ export default function Game() {
       const badgeNames: Record<string, string> = {
         star_5: "5 Stars Badge",
         star_20: "20 Stars Badge",
+        star_50: "50 Stars Badge",
+        star_100: "100 Stars Badge",
         first_game: "First Game Badge",
+        color_wizard: "Color Wizard Badge",
+        shape_master: "Shape Master Badge",
+        math_whiz: "Math Whiz Badge",
+        animal_expert: "Animal Expert Badge",
+        story_master: "Story Master Badge",
+        letter_hero: "Letter Hero Badge",
+        rhymes_star: "Rhymes Star Badge",
+        curious_explorer: "Curious Explorer Badge",
       };
       setTimeout(
         () =>
@@ -663,12 +718,12 @@ export default function Game() {
               Badges
             </span>
           </div>
-          <Link
-            to={`/subject/${childId}/${subject}`}
-            className="bg-transparent border-2 border-[#e8e8f4] text-[#4a4a6a] px-4 py-1.5 rounded-full text-sm font-bold no-underline inline-flex items-center gap-1.5 transition-colors hover:border-[#1aaee8] hover:text-[#1aaee8]"
+          <button
+            onClick={() => navigate(-1)}
+            className="bg-transparent border-2 border-[#e8e8f4] text-[#4a4a6a] px-4 py-1.5 rounded-full text-sm font-bold no-underline inline-flex items-center gap-1.5 transition-colors hover:border-[#1aaee8] hover:text-[#1aaee8] cursor-pointer"
           >
             ← Back
-          </Link>
+          </button>
         </div>
       </nav>
 
@@ -1093,22 +1148,41 @@ export default function Game() {
                 key={currentSceneIndex}
                 className="animate-[popIn_0.5s_ease-out]"
               >
-                <span className="text-8xl block mb-6 filter drop-shadow-md animate-[float_4s_ease-in-out_infinite]">
-                  {
-                    (currentItem as LessonContent).scenes![currentSceneIndex]
-                      .emoji
-                  }
-                </span>
-                <h2 className="font-['Baloo_2'] text-3xl md:text-4xl font-black text-[#1a1a2e] mb-6">
-                  {(currentItem as LessonContent).title}
-                </h2>
+                {(currentItem as LessonContent).scenes![currentSceneIndex].letter ? (
+                  <>
+                    <h2 className="font-['Baloo_2'] text-7xl md:text-9xl font-black text-[#ec407a] mb-2 tracking-widest drop-shadow-sm">
+                      {(currentItem as LessonContent).scenes![currentSceneIndex].letter}
+                    </h2>
+                    <span className="text-8xl block filter drop-shadow-md animate-[float_4s_ease-in-out_infinite]">
+                      {(currentItem as LessonContent).scenes![currentSceneIndex].emoji}
+                    </span>
+                    <h3 className="font-['Baloo_2'] text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-6 drop-shadow-sm">
+                      {(currentItem as LessonContent).scenes![currentSceneIndex].objectName}
+                    </h3>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-8xl block mb-6 filter drop-shadow-md animate-[float_4s_ease-in-out_infinite]">
+                      {
+                        (currentItem as LessonContent).scenes![currentSceneIndex]
+                          .emoji
+                      }
+                    </span>
+                    <h2 className="font-['Baloo_2'] text-3xl md:text-4xl font-black text-[#1a1a2e] mb-6">
+                      {
+                        (currentItem as LessonContent).scenes![currentSceneIndex].objectName ||
+                        (currentItem as LessonContent).title.replace(/Lesson \d+:\s*/, "")
+                      }
+                    </h2>
+                  </>
+                )}
                 <p className="text-xl md:text-2xl font-bold text-[#4a4a6a] mb-10 leading-relaxed whitespace-pre-line">
                   {
                     (currentItem as LessonContent).scenes![currentSceneIndex]
                       .text
                   }
                 </p>
-                {mode === "interactive" &&
+                {(mode === "interactive" || mode?.startsWith("lesson")) &&
                   (currentItem as LessonContent).scenes![currentSceneIndex]
                     .interaction && (
                     <div className="mb-10 bg-blue-50/50 p-6 rounded-3xl border-2 border-blue-100">
@@ -1142,7 +1216,7 @@ export default function Game() {
                   {(currentItem as LessonContent).emoji}
                 </span>
                 <h2 className="font-['Baloo_2'] text-3xl md:text-4xl font-black text-[#1a1a2e] mb-6">
-                  {(currentItem as LessonContent).title}
+                  {(currentItem as LessonContent).title.replace(/Lesson \d+:\s*/, "")}
                 </h2>
                 <p className="text-xl md:text-2xl font-bold text-[#4a4a6a] mb-10 leading-relaxed whitespace-pre-line">
                   {(currentItem as LessonContent).text}
@@ -1173,12 +1247,12 @@ export default function Game() {
               <button
                 onClick={nextLesson}
                 disabled={
-                  mode === "interactive" &&
+                  (mode === "interactive" || mode?.startsWith("lesson")) &&
                   !!(currentItem as LessonContent).scenes?.[currentSceneIndex]
                     ?.interaction &&
                   !interactionSolved
                 }
-                className={`rounded-full px-8 font-extrabold text-lg shadow-md hover:-translate-y-0.5 transition-transform ${mode === "interactive" && !!(currentItem as LessonContent).scenes?.[currentSceneIndex]?.interaction && !interactionSolved ? "bg-gray-300 text-gray-500 cursor-not-allowed transform-none shadow-none" : "bg-gradient-to-br from-[#7b1fa2] to-[#ce93d8] text-white"}`}
+                className={`rounded-full px-8 font-extrabold text-lg shadow-md hover:-translate-y-0.5 transition-transform ${(mode === "interactive" || mode?.startsWith("lesson")) && !!(currentItem as LessonContent).scenes?.[currentSceneIndex]?.interaction && !interactionSolved ? "bg-gray-300 text-gray-500 cursor-not-allowed transform-none shadow-none" : "bg-gradient-to-br from-[#7b1fa2] to-[#ce93d8] text-white"}`}
               >
                 {(currentItem as LessonContent).scenes &&
                 currentSceneIndex <
