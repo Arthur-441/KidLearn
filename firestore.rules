@@ -112,18 +112,7 @@ service cloud.firestore {
         allow create: if isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId &&
                          isValidChildCreate(incoming());
 
-        allow update: if (isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId && (
-          (incoming().diff(existing()).affectedKeys().hasOnly(['dailyMessage', 'stars', 'gamesPlayed', 'badges', 'name', 'avatar', 'lastLoginDate', 'streak', 'dailyStars', 'dailyGames', 'dailyBadges', 'quest1Claimed', 'quest2Claimed', 'quest3Claimed', 'questCompleted']) &&
-          incoming().get('stars', 0) is number &&
-          incoming().get('gamesPlayed', 0) is number &&
-          incoming().get('dailyMessage', "") is string && incoming().get('dailyMessage', "").size() <= 500 &&
-          incoming().get('badges', []) is list && incoming().get('badges', []).size() <= 50) ||
-          (incoming().diff(existing()).affectedKeys().hasOnly(['isPremium', 'premiumActivatedAt', 'activationCode', 'premiumExpireAt']) &&
-          incoming().get('isPremium', false) == true &&
-          incoming().get('premiumActivatedAt', request.time) == request.time &&
-          incoming().get('premiumExpireAt', request.time) is timestamp &&
-          incoming().get('activationCode', '') is string)
-        )) || (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['isPremium']));
+        allow update: if (isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId) || isAdmin();
         
         allow delete: if (isSignedIn() && isValidId(userId) && isValidId(childId) && request.auth.uid == userId) || isAdmin();
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, useMotionValue, animate } from "motion/react";
 import { SOUND_URLS } from "../../utils/sounds";
+import confetti from "canvas-confetti";
 
 interface Props {
   onComplete: (score: number, stars: number, issues: string[]) => void;
@@ -13,73 +14,200 @@ interface Props {
   setFeedback?: (feedback: { text: string; color: string }) => void;
 }
 
-const PUZZLES = [
+const SHAPES = [
   {
-    name: "House",
-    parts: [
+    id: "circle",
+    name: "Circle",
+    color: "#ff595e",
+    targetSvg: <circle cx="100" cy="100" r="90" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="4" strokeDasharray="8 8" />,
+    pieces: [
       {
-        id: "h1",
-        type: "triangle",
-        color: "#FF4B4B",
-        targetX: 100,
-        targetY: 40,
-        width: 100,
-        height: 100,
-        startX: 20,
-        startY: 300,
+        id: "circle-left",
+        initialX: -70,
+        initialY: 100,
+        svg: <path d="M100,10 A90,90 0 0,0 100,190 Z" fill="#ff595e" />
       },
       {
-        id: "h2",
-        type: "square",
-        color: "#4ECAFC",
-        targetX: 100,
-        targetY: 140,
-        width: 100,
-        height: 100,
-        startX: 180,
-        startY: 300,
-      },
-    ],
+        id: "circle-right",
+        initialX: 70,
+        initialY: -100,
+        svg: <path d="M100,10 A90,90 0 0,1 100,190 Z" fill="#ff595e" />
+      }
+    ]
   },
   {
+    id: "square",
+    name: "Square",
+    color: "#1982c4",
+    targetSvg: <rect x="10" y="10" width="180" height="180" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="4" strokeDasharray="8 8" />,
+    pieces: [
+      {
+        id: "sq-top",
+        initialX: -80,
+        initialY: -110,
+        svg: <rect x="10" y="10" width="180" height="90" fill="#1982c4" />
+      },
+      {
+        id: "sq-bot",
+        initialX: 80,
+        initialY: 110,
+        svg: <rect x="10" y="100" width="180" height="90" fill="#1982c4" />
+      }
+    ]
+  },
+  {
+    id: "triangle",
+    name: "Triangle",
+    color: "#8ac926",
+    targetSvg: <polygon points="100,10 190,190 10,190" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="4" strokeDasharray="8 8" />,
+    pieces: [
+      {
+        id: "tri-l",
+        initialX: -70,
+        initialY: 110,
+        svg: <polygon points="100,10 100,190 10,190" fill="#8ac926" />
+      },
+      {
+        id: "tri-r",
+        initialX: 70,
+        initialY: 110,
+        svg: <polygon points="100,10 190,190 100,190" fill="#8ac926" />
+      }
+    ]
+  },
+  {
+    id: "rocket",
     name: "Rocket",
-    parts: [
+    color: "#ff595e",
+    targetSvg: (
+      <g fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="4" strokeDasharray="8 8">
+        <polygon points="100,10 60,60 140,60" />
+        <rect x="60" y="60" width="80" height="100" />
+        <polygon points="60,160 30,190 60,140" />
+        <polygon points="140,160 170,190 140,140" />
+      </g>
+    ),
+    pieces: [
       {
-        id: "r1",
-        type: "triangle",
-        color: "#9B5DE5",
-        targetX: 100,
-        targetY: 40,
-        width: 60,
-        height: 60,
-        startX: 50,
-        startY: 350,
+        id: "rocket-top",
+        initialX: -80,
+        initialY: -100,
+        svg: <polygon points="100,10 60,60 140,60" fill="#ff595e" />
       },
       {
-        id: "r2",
-        type: "square",
-        color: "#FFD93D",
-        targetX: 100,
-        targetY: 100,
-        width: 60,
-        height: 100,
-        startX: 150,
-        startY: 350,
+        id: "rocket-body",
+        initialX: 80,
+        initialY: -80,
+        svg: <rect x="60" y="60" width="80" height="100" fill="#1982c4" />
       },
       {
-        id: "r3",
-        type: "triangle",
-        color: "#FF4B4B",
-        targetX: 70,
-        targetY: 150,
-        width: 30,
-        height: 50,
-        startX: 250,
-        startY: 350,
+        id: "rocket-l-fin",
+        initialX: -60,
+        initialY: 100,
+        svg: <polygon points="60,160 30,190 60,140" fill="#ffca3a" />
       },
-    ],
+      {
+        id: "rocket-r-fin",
+        initialX: 60,
+        initialY: 100,
+        svg: <polygon points="140,160 170,190 140,140" fill="#ffca3a" />
+      }
+    ]
   },
+  {
+    id: "house",
+    name: "House",
+    color: "#ffca3a",
+    targetSvg: (
+      <g fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="4" strokeDasharray="8 8">
+        <polygon points="100,20 20,90 180,90" />
+        <rect x="35" y="90" width="130" height="100" />
+        <rect x="80" y="130" width="40" height="60" />
+      </g>
+    ),
+    pieces: [
+      {
+        id: "house-roof",
+        initialX: -80,
+        initialY: -100,
+        svg: <polygon points="100,20 20,90 180,90" fill="#ffca3a" />
+      },
+      {
+        id: "house-body",
+        initialX: 80,
+        initialY: -80,
+        svg: <rect x="35" y="90" width="130" height="100" fill="#8ac926" />
+      },
+      {
+        id: "house-door",
+        initialX: 0,
+        initialY: 120,
+        svg: <rect x="80" y="130" width="40" height="60" fill="#1982c4" />
+      }
+    ]
+  }
 ];
+
+const DraggablePiece: React.FC<{
+  piece: any;
+  onPlaced: () => void;
+  playAudio: (url: string) => void;
+}> = ({ piece, onPlaced, playAudio }) => {
+  const [placed, setPlaced] = useState(false);
+  const x = useMotionValue(piece.initialX);
+  const y = useMotionValue(piece.initialY);
+
+  useEffect(() => {
+    setPlaced(false);
+    x.set(piece.initialX);
+    y.set(piece.initialY);
+  }, [piece.id, piece.initialX, piece.initialY, x, y]);
+
+  const handleDragEnd = () => {
+    if (placed) return;
+    const cx = x.get();
+    const cy = y.get();
+
+    // Snap if close to target center (0,0)
+    if (Math.abs(cx) < 50 && Math.abs(cy) < 50) {
+      animate(x, 0, { type: "spring", stiffness: 300, damping: 20 });
+      animate(y, 0, { type: "spring", stiffness: 300, damping: 20 });
+      setPlaced(true);
+      setTimeout(() => {
+        onPlaced();
+        playAudio(SOUND_URLS.correct);
+      }, 0);
+    } else {
+      playAudio(SOUND_URLS.wrong);
+      animate(x, piece.initialX, { type: "spring", stiffness: 400, damping: 10 });
+      animate(y, piece.initialY, { type: "spring", stiffness: 400, damping: 10 });
+    }
+  };
+
+  return (
+    <motion.div
+      style={{ x, y, touchAction: "none" }}
+      drag={!placed}
+      dragMomentum={false}
+      onDragStart={() => {
+        if (!placed) playAudio(SOUND_URLS.pop);
+      }}
+      onDragEnd={handleDragEnd}
+      className={`absolute top-0 left-0 w-full h-full ${placed ? "z-10" : "z-[100] cursor-grab active:cursor-grabbing"}`}
+      whileHover={{ scale: placed ? 1 : 1.05 }}
+      whileTap={placed ? {} : { scale: 0.95 }}
+      animate={{
+        filter: placed
+          ? "drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.4))"
+          : "drop-shadow(0px 8px 12px rgba(0,0,0,0.2))",
+      }}
+    >
+      <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible pointer-events-none">
+        {piece.svg}
+      </svg>
+    </motion.div>
+  );
+};
 
 export default function ShapeBuilderGame({
   onComplete,
@@ -88,165 +216,89 @@ export default function ShapeBuilderGame({
   setFeedback,
 }: Props) {
   const [level, setLevel] = useState(0);
-  const [placedParts, setPlacedParts] = useState<string[]>([]);
-  const [score, setScore] = useState(0);
-
-  const currentPuzzle = PUZZLES[level];
+  const [placedIds, setPlacedIds] = useState<string[]>([]);
+  const currentShape = SHAPES[level];
 
   useEffect(() => {
-    if (!currentPuzzle) {
-      onComplete(score, 5, []);
-    } else {
-      if (setFeedback)
+    if (!currentShape) {
+      onComplete(level * 10, 5, []);
+    } else if (setFeedback) {
+      setFeedback({
+        text: `Build the ${currentShape.name}!`,
+        color: "#1a1a2e",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [level, currentShape?.id]);
+
+  const handlePlaced = (id: string) => {
+    const newPlaced = [...placedIds, id];
+    setPlacedIds(newPlaced);
+
+    if (newPlaced.length === currentShape.pieces.length) {
+      // Shape completed!
+      playAudio(SOUND_URLS.awesome);
+      triggerReward?.("star", 1);
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.5 },
+      });
+
+      if (setFeedback) {
         setFeedback({
-          text: `Let's build a ${currentPuzzle.name}!`,
-          color: "#1a1a2e",
+          text: `Hooray! It's a ${currentShape.name}!`,
+          color: "#4CAF50",
         });
-    }
-  }, [level, currentPuzzle]);
-
-  const handleDrop = (e: React.DragEvent | null, partId: string) => {
-    if (e) e.preventDefault();
-    const draggedId = e?.dataTransfer?.getData("text/plain");
-    // Since React drag and drop text data might be tricky, we can use a simpler approach:
-    // If the user drops over the slot with matching id, it clicks into place.
-    // Mobile drop is tricky so we will use simple click-to-place logic for simplicity across devices.
-  };
-
-  const handlePartClick = (partId: string) => {
-    if (placedParts.includes(partId)) return;
-    playAudio(SOUND_URLS.correct);
-    setPlacedParts((prev) => {
-      const next = [...prev, partId];
-      if (next.length === currentPuzzle.parts.length) {
-        setScore((s) => s + 1);
-        if (triggerReward) triggerReward("star", 1);
-        playAudio(SOUND_URLS.awesome);
-        setTimeout(() => {
-          setPlacedParts([]);
-          setLevel((l) => l + 1);
-        }, 2000);
       }
-      return next;
-    });
+
+      setTimeout(() => {
+        setLevel((l) => l + 1);
+        setPlacedIds([]);
+      }, 2500);
+    }
   };
 
-  if (!currentPuzzle) return null;
-
-  const renderShape = (
-    type: string,
-    color: string,
-    w: number,
-    h: number,
-    isOutline = false,
-  ) => {
-    let style: any = { width: w, height: h };
-    if (isOutline) {
-      style.border = "4px dashed #ccc";
-      style.backgroundColor = "transparent";
-    } else {
-      style.backgroundColor = color;
-    }
-
-    if (type === "square") {
-      return (
-        <div
-          style={{
-            ...style,
-            borderRadius: "8px",
-            opacity: isOutline ? 0.5 : 1,
-          }}
-        />
-      );
-    }
-    if (type === "triangle") {
-      if (isOutline) {
-        return (
-          <div
-            style={{
-              width: 0,
-              height: 0,
-              borderLeft: `${w / 2}px solid transparent`,
-              borderRight: `${w / 2}px solid transparent`,
-              borderBottom: `${h}px dashed #ccc`,
-              opacity: 0.5,
-            }}
-          />
-        );
-      }
-      return (
-        <div
-          style={{
-            width: 0,
-            height: 0,
-            borderLeft: `${w / 2}px solid transparent`,
-            borderRight: `${w / 2}px solid transparent`,
-            borderBottom: `${h}px solid ${color}`,
-          }}
-        />
-      );
-    }
-    return null;
-  };
+  if (!currentShape) return null;
 
   return (
-    <div className="w-full h-full min-h-[500px] relative overflow-hidden bg-gradient-to-br from-[#E0F7FA] to-[#80DEEA] rounded-3xl shadow-inner border-4 border-white">
-      <div className="absolute top-6 left-0 right-0 flex justify-center pointer-events-none">
-        <div className="bg-white/80 backdrop-blur-md px-8 py-3 rounded-full shadow-lg border-2 border-white">
-          <h2 className="text-3xl font-black text-[#006064]">
-            Build a {currentPuzzle.name}!
-          </h2>
+    <div className="w-full h-full min-h-[500px] relative overflow-hidden bg-[#f8f9fc] rounded-3xl shadow-inner border-8 border-[#e8e8f4] flex flex-col items-center justify-center p-4">
+      {/* Target Container - Centers the game area */}
+      <div className="relative w-[180px] h-[180px] md:w-[220px] md:h-[220px]">
+        {/* Silhouette */}
+        <div className="absolute inset-0">
+          <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible">
+            {currentShape.targetSvg}
+          </svg>
         </div>
+
+        {/* Pieces overlaying the silhouette */}
+        {currentShape.pieces.map((piece) => (
+          <DraggablePiece
+            key={piece.id}
+            piece={piece}
+            onPlaced={() => handlePlaced(piece.id)}
+            playAudio={playAudio}
+          />
+        ))}
+
+        {/* Success burst - appears when placed completely */}
+        {placedIds.length === currentShape.pieces.length && (
+          <motion.div
+            className="absolute inset-0 z-0 pointer-events-none"
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1.1 }}
+            transition={{ type: "spring", bounce: 0.5 }}
+          >
+            <div className="w-full h-full rounded-full border-8 border-[#FFD93D] shadow-[0_0_40px_#FFD93D] opacity-60"></div>
+          </motion.div>
+        )}
       </div>
 
-      {/* Targets Canvas */}
-      <div className="absolute top-[80px] left-[50%] transform -translate-x-[50%] w-[300px] h-[250px] flex items-center justify-center relative">
-        {currentPuzzle.parts.map((part) => {
-          const isPlaced = placedParts.includes(part.id);
-          return (
-            <div
-              key={`target-${part.id}`}
-              className="absolute"
-              style={{ left: part.targetX, top: part.targetY }}
-            >
-              {isPlaced
-                ? renderShape(part.type, part.color, part.width, part.height)
-                : renderShape(
-                    part.type,
-                    part.color,
-                    part.width,
-                    part.height,
-                    true,
-                  )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Source Parts */}
-      <div className="absolute bottom-10 left-0 w-full flex justify-center gap-6 px-4">
-        <AnimatePresence>
-          {currentPuzzle.parts.map((part) => {
-            if (placedParts.includes(part.id)) return null;
-            return (
-              <motion.div
-                key={`source-${part.id}`}
-                initial={{ scale: 0, y: 50 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0, opacity: 0 }}
-                onClick={() => handlePartClick(part.id)}
-                className="cursor-pointer hover:scale-110 transition-transform active:scale-95 filter drop-shadow-xl"
-              >
-                {renderShape(
-                  part.type,
-                  part.color,
-                  part.width * 0.8,
-                  part.height * 0.8,
-                )}
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+      <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none px-4 z-50">
+        <p className="text-[#64748b] font-bold text-center bg-white/80 px-5 py-3 rounded-full backdrop-blur-sm border border-white shadow-sm font-['Baloo_2'] text-lg">
+          Drag the shapes in their right places
+        </p>
       </div>
     </div>
   );

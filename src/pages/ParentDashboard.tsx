@@ -36,6 +36,7 @@ export default function ParentDashboard() {
   const [isAddingMode, setIsAddingMode] = useState(false);
   const [newKidName, setNewKidName] = useState("");
   const [newKidAvatar, setNewKidAvatar] = useState("🧒");
+  const [showChildAddedSuccess, setShowChildAddedSuccess] = useState(false);
 
   const [dailyMessage, setDailyMessage] = useState("");
 
@@ -115,6 +116,12 @@ export default function ParentDashboard() {
       });
       setIsAddingMode(false);
       setNewKidName("");
+      setShowChildAddedSuccess(true);
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
     } catch (err) {
       console.error(err);
     }
@@ -304,7 +311,46 @@ export default function ParentDashboard() {
   if (loading) return null;
 
   return (
-    <div className="bg-[#f9f9fd] min-h-screen text-[#1a1a2e] pt-[62px] font-['Nunito'] flex flex-col">
+    <div className="bg-[#f9f9fd] min-h-screen text-[#1a1a2e] pt-[62px] font-['Nunito'] flex flex-col relative">
+      {/* SUCCESS MODAL */}
+      {showChildAddedSuccess && selectedChild && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#1a1a2e]/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden border-4 border-[#FFD93D] flex flex-col items-center">
+            <div className="text-7xl mb-4 animate-bounce">🎉</div>
+            <h2 className="text-3xl font-black font-['Baloo_2'] text-[#1a1a2e] mb-2 text-center">
+              Awesome!
+            </h2>
+            <p className="text-lg font-bold text-[#4a4a6a] mb-6 text-center">
+              {selectedChild.name}'s profile is ready!
+            </p>
+            <div className="bg-[#f0f9ff] text-[#0284c7] font-semibold text-sm p-4 text-left rounded-xl mb-6 w-full border border-[#bae6fd]">
+              <ul className="list-disc pl-5 space-y-2">
+                <li>You can now safely go back to the menu.</li>
+                <li>Let {selectedChild.name} open their playful dashboard and start learning adventures!</li>
+                <li>You can monitor their active progress right here on your dashboard anytime.</li>
+              </ul>
+            </div>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setShowChildAddedSuccess(false)}
+                className="flex-1 bg-[#f1f5f9] text-[#64748b] px-4 py-3 rounded-full font-bold hover:bg-[#e2e8f0] transition-colors"
+              >
+                Stay here
+              </button>
+              <button
+                onClick={() => {
+                  setShowChildAddedSuccess(false);
+                  navigate('/');
+                }}
+                className="flex-[2] bg-[#FFD93D] text-[#1a1a2e] px-4 py-3 rounded-full font-black text-lg hover:scale-105 transition-all shadow-md"
+              >
+                Let {selectedChild.name} Play!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <nav className="fixed top-0 left-0 right-0 z-[200] h-[62px] bg-white border-b-2 border-[#e8e8f4] flex items-center justify-between px-4 md:px-9 shadow-sm">
         <div className="flex items-center gap-4">
           <button
@@ -350,9 +396,14 @@ export default function ParentDashboard() {
           {!isAddingMode ? (
             <button
               onClick={() => setIsAddingMode(true)}
-              className="w-full py-3 border-2 border-dashed border-[#ccc] text-[#99bb] font-bold rounded-xl hover:border-[#1aaee8] hover:text-[#1aaee8] transition-colors"
+              className="w-full py-3 border-2 border-dashed border-[#ccc] text-[#99bb] font-bold rounded-xl hover:border-[#1aaee8] hover:text-[#1aaee8] transition-colors relative"
             >
               + Add Child
+              {children.length === 0 && (
+                <div className="absolute right-[-20px] top-[10px] text-3xl animate-bounce hidden md:block">
+                  👈
+                </div>
+              )}
             </button>
           ) : (
             <form
@@ -382,7 +433,7 @@ export default function ParentDashboard() {
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="flex-1 bg-[#FF8C42] text-white py-2 flex items-center justify-center rounded-lg text-sm font-bold"
+                  className="flex-1 bg-[#FF8C42] text-white py-2 flex items-center justify-center rounded-lg text-sm font-bold shadow-sm"
                 >
                   Add
                 </button>
@@ -400,57 +451,67 @@ export default function ParentDashboard() {
 
         {/* Main Content */}
         <div className="flex-1 p-4 md:p-9 md:overflow-y-auto w-full max-w-full">
-          <div className="w-full max-w-[900px] mx-auto mb-8">
-            <div className="bg-gradient-to-r from-[#1a1a2e] to-[#2a2a4a] text-white p-6 rounded-2xl shadow-md border-2 border-[#FFD93D] relative overflow-hidden">
-              <div className="flex flex-col md:flex-row md:items-center justify-between z-10 relative gap-4 md:gap-0">
-                <div>
-                  <h2 className="text-2xl font-black font-['Baloo_2'] mb-1 flex items-center gap-2">
-                    <span className="text-3xl">👑</span> KidLearn Academy App Premium
-                  </h2>
-                  <p className="text-[#a4b1cd] font-bold text-sm md:text-base max-w-[400px]">
-                    {selectedChild?.isPremium ? (
-                      <>
-                        Premium is currently active for <strong>{selectedChild.name}</strong>.
-                        <br />
-                        {selectedChild.premiumExpireAt && (() => {
-                          const expireDate = selectedChild.premiumExpireAt.toDate();
-                          const today = new Date();
-                          today.setHours(0, 0, 0, 0);
-                          const exp = new Date(expireDate);
-                          exp.setHours(0, 0, 0, 0);
-                          const days = Math.max(0, Math.round((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
-                          if (days <= 5) {
-                            return <span className="text-red-400 font-black">Warning: Code expires in {days} {days === 1 ? 'day' : 'days'}! Extend now.</span>;
-                          }
-                          return <span className="text-green-400 font-bold">{days} {days === 1 ? 'day' : 'days'} remaining on this profile.</span>;
-                        })()}
-                      </>
-                    ) : (
-                      "Unlock premium worlds, advanced games, and more! Premium features are activated individually for each child profile."
-                    )}
-                  </p>
-                </div>
-
-                <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
-                  <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                    <button
-                      onClick={() => navigate('/activate')}
-                      className="w-full sm:w-auto text-center bg-[#FFD93D] text-[#1a1a2e] font-black px-6 py-3 rounded-xl shadow-sm hover:scale-105 transition-transform"
-                    >
-                      {selectedChild?.isPremium ? "Extend Premium" : "Activate Premium"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {!selectedChild ? (
-            <div className="h-40 flex items-center justify-center text-[#9999bb] font-bold">
-              Select or add a child to view details.
+            <div className="flex flex-col items-center justify-center text-center p-8 bg-white rounded-3xl shadow-sm border-2 border-dashed border-[#1aaee8] mt-10 max-w-lg mx-auto">
+              <div className="text-6xl mb-4">👼</div>
+              <h2 className="text-2xl font-['Baloo_2'] font-black text-[#1a1a2e] mb-2">Welcome to your Dashboard!</h2>
+              <p className="text-[#64748b] font-bold mb-6">
+                To get started, you need to set up a profile for your child. Tap the <strong className="text-[#1aaee8]">+ Add Child</strong> button on the side to create their first learning space.
+              </p>
+              <button 
+                onClick={() => setIsAddingMode(true)}
+                className="bg-[#1aaee8] text-white px-6 py-3 rounded-full font-bold shadow-sm md:hidden animate-pulse"
+              >
+                + Add Profile Now
+              </button>
             </div>
           ) : (
             <div className="max-w-[900px] mx-auto">
+              <div className="w-full mx-auto mb-8">
+                <div className="bg-gradient-to-r from-[#1a1a2e] to-[#2a2a4a] text-white p-6 rounded-2xl shadow-md border-2 border-[#FFD93D] relative overflow-hidden">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between z-10 relative gap-4 md:gap-0">
+                    <div>
+                      <h2 className="text-2xl font-black font-['Baloo_2'] mb-1 flex items-center gap-2">
+                        <span className="text-3xl">👑</span> KidLearn Academy App Premium
+                      </h2>
+                      <p className="text-[#a4b1cd] font-bold text-sm md:text-base max-w-[400px]">
+                        {selectedChild?.isPremium ? (
+                          <>
+                            Premium is currently active for <strong>{selectedChild.name}</strong>.
+                            <br />
+                            {selectedChild.premiumExpireAt && (() => {
+                              const expireDate = selectedChild.premiumExpireAt.toDate();
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              const exp = new Date(expireDate);
+                              exp.setHours(0, 0, 0, 0);
+                              const days = Math.max(0, Math.round((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+                              if (days <= 5) {
+                                return <span className="text-red-400 font-black">Warning: Code expires in {days} {days === 1 ? 'day' : 'days'}! Extend now.</span>;
+                              }
+                              return <span className="text-green-400 font-bold">{days} {days === 1 ? 'day' : 'days'} remaining on this profile.</span>;
+                            })()}
+                          </>
+                        ) : (
+                          "Unlock premium worlds, advanced games, and more! Premium features are activated individually for each child profile."
+                        )}
+                      </p>
+                    </div>
+    
+                    <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
+                      <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                        <button
+                          onClick={() => navigate('/activate')}
+                          className="w-full sm:w-auto text-center bg-[#FFD93D] text-[#1a1a2e] font-black px-6 py-3 rounded-xl shadow-sm hover:scale-105 transition-transform"
+                        >
+                          {selectedChild?.isPremium ? "Extend Premium" : "Activate Premium"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex items-end justify-between mb-8 pb-4 border-b-2 border-[#e8e8f4]">
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 bg-white border-4 border-[#FFD93D] rounded-full flex items-center justify-center text-4xl shadow-sm">
